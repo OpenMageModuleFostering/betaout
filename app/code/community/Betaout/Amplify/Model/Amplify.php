@@ -667,7 +667,7 @@ class Amplify {
             $email=$cemail;
         }
         
-        $argumentsArray = array('email' => $email, 'name' => $name, 'url' => $url, 'referer' => $referer);
+        $argumentsArray = array('email' => $email, 'name' => $name, 'url' => $url, 'referer' => $referer,'token'=>$token);
         $response = $this->http_call('identify', $argumentsArray);
            if($email!=''){
             setcookie('_ampEm',base64_encode($email),time()+604800,'/');

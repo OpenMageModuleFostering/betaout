@@ -160,6 +160,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $sku = $productName . "_" . $product->getSku();
                 $qty = $product->getPrice();
                 $cart = Mage::getSingleton('checkout/cart');
+                
                 $cart_id=$cart->getQuote()->getId();
                 setcookie('_ampCart',$cart_id,time()+604800,'/');
              
@@ -180,7 +181,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $actionData[0]['weight'] = $product->getWeight();
                 $actionData[0]['size'] = $product->getResource()->getAttribute('shirt_size') ? $product->getAttributeText('shirt_size') : false;
                 $actionData[0]['color'] = $product->getResource()->getAttribute('color') ? $product->getAttributeText('color') : false;
-                $actionData[0]['brandName'] = $product->getResource()->getAttribute('manufacturer') ? $product->getAttributeText('manufacturer') : false;
+                $actionData[0]['brandName'] = $product->getResource()->getAttribute('brand') ? $product->getAttributeText('brand') : false;
                 $actionData[0]['qty'] = (int) $product->getQty();
                 $actionData[0]['category'] = $cateHolder;
                 $actionData[0]['discount'] = abs($product->getPrice() - $product->getFinalPrice());
@@ -196,6 +197,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     'pd' => $actionData
                 );
                 //mail("rohit@getamplify.com","add to cart",json_encode($actionDescription));
+               // print_r($actionDescription);
                 $res = $this->amplify->customer_action($actionDescription);
              
             }
@@ -662,6 +664,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     'pd' => $actionData
                 );
                 // mail("rohit@getamplify.com","purchased",json_encode($actionDescription));
+               //print_r($actionDescription);
                 $res = $this->amplify->customer_action($actionDescription);
                 
             }
@@ -671,6 +674,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
     }
 
     public function getAmplifyOrderSaveSuccess(Varien_Event_Observer $evnt) {
+       // echo "order save  3d m3 bf3 ";
+        
  //       try {
 //            if ($this->verified) {
 //               $order_id = $evnt->getEvent()->getOrder()->getId() ;
@@ -916,9 +921,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $subdiff = 0;
                 $actionData = array();
                 foreach ($observer->getCart()->getQuote()->getAllVisibleItems() as $product) {
-
+                   
                     if ($product->hasDataChanges()) {
-                        // print_r($product);
                         $productId = $product->getProductId();
                         $catCollection = $product->getCategoryCollection();
 
@@ -964,8 +968,9 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     'action' => 'update_cart',
                     'pd' => $actionData
                 );
+             // print_r($actionDescription);
               
-                //mail("rohit@getamplify.com","update cart",json_encode($actionDescription));
+               // mail("rohit@getamplify.com","update cart",json_encode($actionDescription));
                 $res = $this->amplify->customer_action($actionDescription);
             }
         } catch (Exception $ex) {

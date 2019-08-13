@@ -74,23 +74,24 @@
                     </yourmodule>
                 </observers>
             </admin_system_config_changed_section_betaout_amplify_options>
-            <checkout_onepage_controller_success_action>
+<!--            <checkout_onepage_controller_success_action>
                 <observers>
                     <checkout_type_onepage_save_order>
                         <class>Betaout_Amplify_Model_Key</class>
                         <method>getAmplifyOrderSuccessPageView</method>
                     </checkout_type_onepage_save_order>
                 </observers>
-            </checkout_onepage_controller_success_action>
-           <catalog_product_save_after>
+            </checkout_onepage_controller_success_action>-->
+            
+<!--             <checkout_onepage_controller_success_action>
                 <observers>
-                    <catalog_product_save_after>
-                        <type>singleton</type>
+                    <amplify_order_success>
                         <class>Betaout_Amplify_Model_Key</class>
-                        <method>getAmplifyCatalog_product_save_after</method>
-                    </catalog_product_save_after>
+                        <method>getAmplifyOrderSuccessPageView</method>
+                    </amplify_order_success>
                 </observers>
-            </catalog_product_save_after>
+            </checkout_onepage_controller_success_action>-->
+            
             <sales_order_save_commit_after><!--could used sales_order_save_after for backend support, but it fires mulitple times-->
                 <observers>
                     <amplify_sales_order_save_commit_after>
@@ -103,10 +104,10 @@
             
              <checkout_type_onepage_save_order_after>
                   <observers>
-                      <amplify_save_order_observer>
-                           <class>Betaout_Amplify_Model_Key</class>
+                      <betaout_amplify>
+                        <class>Betaout_Amplify_Model_Key</class>
                         <method>getAmplifyOrderSaveSuccess</method>
-                      </amplify_save_order_observer>
+                      </betaout_amplify>
                    </observers>
               </checkout_type_onepage_save_order_after>
              
@@ -131,6 +132,14 @@
             </updates>
         </layout>
         <events>
+            <checkout_onepage_controller_success_action>
+                <observers>
+                    <amplify_order_success>
+                        <class>Betaout_Amplify_Model_Key</class>
+                        <method>getAmplifyOrderSuccessPageView</method>
+                    </amplify_order_success>
+                </observers>
+            </checkout_onepage_controller_success_action>
             <sales_quote_remove_item>
                 <observers>
                     <sales_quote_remove_item>
@@ -307,24 +316,6 @@
                
             </resources>
         </acl>
-        <events>
-            <catalog_product_delete_after_done>
-                <observers>
-                    <catalog_product_delete_after_done>
-                        <class>Betaout_Amplify_Model_Key</class>
-                        <method>getAmplifyCatalog_product_delete_after_done</method>
-                    </catalog_product_delete_after_done>
-                </observers>
-            </catalog_product_delete_after_done>
-            <catalog_product_edit_action>
-                <observers>
-                    <amplify_observer>
-                        <class>Betaout_Amplify_Model_Key</class>
-                        <method>getAmplifyCatalog_product_edit_action</method>
-                    </amplify_observer>
-                </observers>
-            </catalog_product_edit_action>
-        </events>  
     </adminhtml>
 <!--    <default>
         <betaout_amplify_options>                

@@ -35,6 +35,7 @@
  * amplify.to API
  */
 require_once('app/Mage.php');
+
 class Amplify {
     /*
      * the amplify ApiKey
@@ -133,7 +134,8 @@ class Amplify {
         'product_edit' => 'product/edit/',
         'product_delete' => 'product/remove/',
         'customer_action' => 'user/customer_activity/',
-        'order_update' => 'product/updateorder/'
+        'order_update' => 'product/updateorder/',
+        'send_old_order' => 'user/send_old_order/'
     );
 
     /**
@@ -425,9 +427,9 @@ class Amplify {
     }
 
     public static $CURL_OPTS = array(
-        CURLOPT_CONNECTTIMEOUT_MS => 2000,
+        CURLOPT_CONNECTTIMEOUT_MS => 3000,
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT_MS => 2000,
+        CURLOPT_TIMEOUT_MS => 3000,
         CURLOPT_USERAGENT => 'amplify-php-1.0',
     );
 
@@ -506,7 +508,6 @@ class Amplify {
 
     public function setOtt() {
         $this->ott = Mage::getModel('core/cookie')->get('amplifyUid');
-//        print "\ottt = " . $this->ott. "\n";
     }
 
     public function getOtt() {
@@ -648,7 +649,6 @@ class Amplify {
         $argumentsArray = array('email' => $email, 'name' => $name, 'url' => $url, 'referer' => $referer);
         $response = $this->http_call('identify', $argumentsArray);
         if ($response['responseCode'] == '200') {
-
             Mage::getModel('core/cookie')->set('amplifyUid', $response['amplifySession'], time() + 604800, '/');
 //            if (!isset($_COOKIE['amplifysid']))
 //                setcookie('amplifysid', $response['amplifySession'], time() + 604800, '/');
@@ -709,8 +709,6 @@ class Amplify {
 
     public function update($email, $propetyArray) {
         $argumentsArray = array('email' => $email, 'properties' => $propetyArray);
-//        print_r($argumentsArray);
-//        print "\$argumentsArray = " . $argumentsArray . "\n";
 
         return $this->http_call('update', $argumentsArray);
     }
@@ -723,7 +721,7 @@ class Amplify {
     public function add($email, $propetyArray, $text = 0) {
         $argumentsArray = array('email' => $email, 'properties' => $propetyArray);
         if ($text)
-            $argumentsArray = array('email' => $email, 'properties' => $propetyArray, 'property_force_data_type' => 'text');// if string 
+            $argumentsArray = array('email' => $email, 'properties' => $propetyArray, 'property_force_data_type' => 'text'); // if string 
 
         return $this->http_call('add', $argumentsArray);
     }
@@ -796,6 +794,11 @@ class Amplify {
 
         $currentURL .= $_SERVER["REQUEST_URI"];
         return $currentURL;
+    }
+
+    public function send_old_order($actionDescription) {
+        $argumentsArray = $actionDescription;
+        return $this->http_call('send_old_order', $argumentsArray);
     }
 
 }

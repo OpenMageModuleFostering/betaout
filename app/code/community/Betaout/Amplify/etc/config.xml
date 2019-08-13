@@ -31,7 +31,7 @@
         </helpers> 
 
         <events>
-              <checkout_cart_add_product_complete>
+            <checkout_cart_add_product_complete>
                 <observers>
                     <amplify_add_to_cart>
                         <type>singleton</type>
@@ -173,7 +173,7 @@
                     </sales_quote_remove_item>
                 </observers>
             </sales_quote_remove_item>
-<!--            <checkout_cart_save_after>
+            <!--            <checkout_cart_save_after>
                 <observers>
                     <checkout_cart_save_after>
                         <type>singleton</type>
@@ -182,7 +182,7 @@
                     </checkout_cart_save_after>
                 </observers>
             </checkout_cart_save_after>-->
-<!--            <checkout_cart_update_items_before>
+            <!--            <checkout_cart_update_items_before>
                 <observers>
                     <wishlist>
                         <class>Betaout_Amplify_Model_Key</class>
@@ -229,7 +229,7 @@
             </sales_order_place_after>
             
             
-<!--            <sales_order_place_before>
+            <!--            <sales_order_place_before>
                 <observers>
                     <amplify_customer_register_from_checkout>
                         <type>singleton</type>
@@ -247,7 +247,7 @@
                     </amplify_customer_register_success>
                 </observers>
             </customer_register_success>
-<!--            <checkout_cart_add_product_complete>
+            <!--            <checkout_cart_add_product_complete>
                 <observers>
                     <amplify_add_to_cart>
                         <type>singleton</type>
@@ -336,7 +336,7 @@
                     </amplify_sales_quote_save_after>
                 </observers>
             </sales_quote_save_after>
-<!--                        <sales_quote_save_before>
+            <!--                        <sales_quote_save_before>
                 <observers>
                     <amplify_sales_quote_save_before>
                         <type>singleton</type>
@@ -440,4 +440,35 @@
             </catalog_product_edit_action>
         </events>  
     </adminhtml>
+    <default>
+        <betaout_amplify_options>                
+            <order>
+                <cron_setting>*/1 * * * *</cron_setting>
+            </order>
+        </betaout_amplify_options>
+    </default>
+    <crontab>
+        <jobs>                
+            <betaout_export_send_order>
+                <schedule>
+                    <config_path>betaout_amplify_options/order/cron_setting</config_path>
+                </schedule>
+                <run>
+                   <model>betaout_amplify/Key::sendData</model>
+                </run>
+            </betaout_export_send_order>
+        </jobs>
+<!--        <events>
+            <checkout_cart_add_product_complete>
+                <observers>
+                    <amplify_add_to_cart>
+                        <type>singleton</type>
+                        <class>Betaout_Amplify_Model_Key</class>
+                        <method>getAmplifyEventAddToCart</method>
+                    </amplify_add_to_cart>
+                </observers>
+            </checkout_cart_add_product_complete> 
+        </events>-->
+    </crontab>
+   
 </config>

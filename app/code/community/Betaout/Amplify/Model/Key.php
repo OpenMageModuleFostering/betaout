@@ -3,6 +3,8 @@
 require_once 'Amplify.php';
 require_once('app/Mage.php');
 
+//30 8 * * 6 home/path/to/command/the_command.sh >/dev/null
+//curl -s -o /dev/null http://www.YOURDOMAIN.com/PATH_TO_MAGENTO/cron.php > /dev/null
 class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
     /* @var $this Betaout_Amplify_Model_Key */
 
@@ -15,12 +17,20 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
     public $allitems;
     public $checkstring;
     public $email = '';
+    public $installDate;
+    public $_process_date;
+    public $_schedule = '0 0 0 1 12 4090';
 
     const XML_PATH_KEY = 'betaout_amplify_options/settings/amplify_key';
     const XML_PATH_SECRET = 'betaout_amplify_options/settings/amplify_secret';
     const XML_PATH_PROJECTID = 'betaout_amplify_options/settings/amplify_projectId';
+    const XML_PATH_SEND_ORDER_STATUS = 'betaout_amplify_options/order/status1';
     const MAIL_TO = 'raijiballia@gmail.com';
     const MAIL_SUB = 'Magento Error Reporter';
+    const XML_PATH_MAX_RUNNING_TIME = 'system/cron/max_running_time';
+    const XML_PATH_EMAIL_TEMPLATE = 'system/cron/error_email_template';
+    const XML_PATH_EMAIL_IDENTITY = 'system/cron/error_email_identity';
+    const XML_PATH_EMAIL_RECIPIENT = 'system/cron/error_email';
 
     public function __construct($key_string) {
         try {
@@ -29,7 +39,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
             $this->projectId = Mage::getStoreConfig(self::XML_PATH_PROJECTID);
             $this->verified = Mage::getStoreConfig('betaout_amplify_options/settings/amplify_verified');
             $this->amplify = new Amplify($this->key, $this->secret, $this->projectId);
-            $this->amplify->identify($this->getCustomerIdentity());
+//            $this->_process_date = Mage::getStoreConfig('betaout_amplify_options/settings/_process_date');
         } catch (Exception $ex) {
             
         }
@@ -94,10 +104,15 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
         }
         $result = $this->amplify->verify();
         if ($result['responseCode'] == 200) {
+            if (!Mage::getStoreConfig('betaout_amplify_options/settings/beta_start_date')) {
+                Mage::getModel('core/config')->saveConfig('betaout_amplify_options/settings/beta_start_date', gmdate('Y-m-d H:i:s'));
+                Mage::getModel('core/config')->saveConfig('betaout_amplify_options/order/cron_setting', '*/5 * * * *');
+                Mage::getModel('core/config')->saveConfig('betaout_amplify_options/settings/_process_date', gmdate('Y-m-d H:i:s'));
+            }
             Mage::getModel('core/config')->saveConfig('betaout_amplify_options/settings/amplify_verified', TRUE);
         } else {
             Mage::getModel('core/config')->saveConfig('betaout_amplify_options/settings/amplify_verified', false);
-            throw new Mage_Core_Exception("Configuration could not be saved. Check your key and secret.");
+            throw new Mage_Core_Exception("Configuration could not be saved. Check your key and secret.$result");
         }
     }
 
@@ -282,7 +297,11 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
         try {
             if ($this->verified) {
 
-
+                $c = Mage::getSingleton('customer/session')->getCustomer();
+                $customer = Mage::getModel('customer/customer')->load($c->getId());
+                $email = $customer->getEmail();
+                $custName = $customer->getFirstname();
+                $custName = $custName . " " . $customer->getLastname();
                 try {
                     $this->amplify->identify($this->getCustomerIdentity(), $custName);
                 } catch (Exception $ex) {
@@ -292,33 +311,35 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     'unique_id' => $this->getCustomerIdentity()));
 
 
-                $c = Mage::getSingleton('customer/session')->getCustomer();
-                $customer = Mage::getModel('customer/customer')->load($c->getId());
+
                 $person = array();
-                $person['WebId'] = $customer->getWebsiteId();
+                $person['webId'] = $customer->getWebsiteId();
                 $person['storeId'] = $customer->getStoreId();
-                $email = $customer->getEmail();
-                $custome = $customer->getAddresses();
+                $person['groupId]'] = $customer->getGroupId();
+                $res = $this->amplify->add($email, $person, 1);
+                $person = array();
+                $customerAddressId = $c->getDefaultShipping();
+                if ($customerAddressId) {
+                    $customer = Mage::getModel('customer/address')->load($customerAddressId);
+                }
 
-                if (is_array($custome)) {
-                    foreach ($custome as $customer) {
 
-                        if (is_object($customer)) {
-                            $person['firstname'] = $customer->getFirstname();
-                            $person['lastname'] = $customer->getLastname();
 
-                            $person['postcode'] = $customer->getPostcode();
-                            $person['telephone'] = $customer->getTelephone();
-                            $person['fax'] = $customer->getfax();
-                            $person['customerId'] = $customer->getCustomerId();
-                            $person['company'] = $customer->getCompany();
-                            $person['region'] = $customer->getRegion();
-                            $person['street'] = $customer->getStreetFull();
-                        }
-                    }
+                if (is_object($customer)) {
+                    $person['firstname'] = $customer->getFirstname();
+                    $person['lastname'] = $customer->getLastname();
+
+                    $person['postcode'] = $customer->getPostcode();
+                    $person['telephone'] = $customer->getTelephone();
+                    $person['fax'] = $customer->getfax();
+                    $person['customerId'] = $customer->getCustomerId();
+                    $person['company'] = $customer->getCompany();
+                    //     $person['region'] = $customer->getRegion();
+                    $person['street'] = $customer->getStreetFull();
                 }
                 $person = array_filter($person);
-                $res = $this->amplify->add($email, $person, 1);
+                $res = $this->amplify->update($email, $person);
+
 //$customerAddressId = Mage::getSingleton('customer/session')->getCustomer()->getDefaultShipping();
 //    if ($customerAddressId){
 //        $address = Mage::getModel('customer/address')->load($customerAddressId);
@@ -358,10 +379,12 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $customer = Mage::getModel('customer/customer')->load($c->getId());
 
 
-                return $customer->getEmail();
+                $email = $customer->getEmail();
             } else {
-                return Mage::getModel('core/cookie')->get('amplify_email');
+                $email = Mage::getModel('core/cookie')->get('amplify_email');
             }
+            $this->amplify->identify($email);
+            return $email;
         } catch (Exception $ex) {
             
         }
@@ -370,10 +393,11 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
     public function getAmplifyEventOrder($evnt) {
         try {
             if ($this->verified) {
-
+                $this->event('place_order_clicked');
+                return 1;
                 $order = $evnt->getEvent()->getOrder();
                 $quote = $order->getQuote();
-
+//
                 $customer_id = $order->getCustomerId();
                 $customer = Mage::getModel('customer/customer')->load($customer_id);
                 $customer_email = $customer->getEmail();
@@ -389,7 +413,6 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
 
                     $skus[] = $product->getSku();
                 }
-
                 $order_date = $quote->getUpdatedAt();
                 $order_date = str_replace(' ', 'T', $order_date);
 
@@ -397,41 +420,17 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
 
                 $person = array();
                 $person = $this->getCustomereventInfo($customer);
-
                 $additional = array();
                 $additional['lastOrder'] = $order_date;
                 $additional['skus'] = $skus;
-//                $this->eventPerson($person, $additional);
-//                $this->event_revenue($customer_email, $revenue);
-
+                $this->eventPerson($person, $additional);
+                $this->event_revenue($customer_email, $revenue);
+                $skus = 0;
                 $this->event('place_order_clicked', array('skus' => $skus,
-                    'order_date' => $order_date,
-                    'order_total' => $revenue,
-                    'unique_id' => $this->getCustomerIdentity()));
-
-//
-//                $c = Mage::getSingleton('customer/session')->getCustomer();
-//                $customer = Mage::getModel('customer/customer')->load($c->getId());
-//
-//                $email = $customer->getEmail();
-//                $customer = $customer->getAddresses();
-//
-//                if (is_array($customer)) {
-//                    $ekey = array_keys($customer);
-//                    $customer = $customer[$ekey[0]];
-//                }
-//                $person['firstname'] = $customer->getFirstname();
-//                $person['lastname'] = $customer->getLastname();
-//
-//                $person['postcode'] = $customer->getPostcode();
-//                $person['telephone'] = $customer->getTelephone();
-//                $person['fax'] = $customer->getfax();
-//                $person['regionId'] = $customer->getRegionId();
-//                $street = $customer->getStreet();
-//                $person['street'] = $street[0];
-//                $person['customerId'] = $customer->getCustomerId();
-//                $person = array_filter($person);
-//                $res = $this->amplify->update($email, $person);
+//                    'order_date' => $order_date,
+//                    'order_total' => $revenue,
+//                    'unique_id' => $this->getCustomerIdentity()
+                ));
             }
         } catch (Exception $ex) {
             
@@ -440,26 +439,27 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
 
     public function getamplifyEventCustomerSave($evnt) {
         try {
+            return 1;
             if ($this->verified) {
-//                $c = Mage::getSingleton('customer/session')->getCustomer();
-//                $customer = Mage::getModel('customer/customer')->load($c->getId());
-//                $customer = $customer->getAddresses();
-//
-//                if (is_array($customer)) {
-//                    $ekey = array_keys($customer);
-//                    $customer = $customer[$ekey[0]];
-//                }
-//                $person['firstname'] = $customer->getFirstname();
-//                $person['lastname'] = $customer->getLastname();
-//             
-//                $person['postcode'] = $customer->getPostcode();
-//                $person['telephone'] = $customer->getTelephone();
-//                $person['fax'] = $customer->getfax();
-//                $person['regionId'] = $customer->getRegionId();
-//                $street = $customer->getStreet();
-//                $person['street'] = $street[0];
-//                $person['customer_id'] = $customer->getCustomer_id();
-//                $res = $this->amplify->update($customer->getEmail(), $person);
+                $c = Mage::getSingleton('customer/session')->getCustomer();
+                $customer = Mage::getModel('customer/customer')->load($c->getId());
+                $customer = $customer->getAddresses();
+
+                if (is_array($customer)) {
+                    $ekey = array_keys($customer);
+                    $customer = $customer[$ekey[0]];
+                }
+                $person['firstname'] = $customer->getFirstname();
+                $person['lastname'] = $customer->getLastname();
+
+                $person['postcode'] = $customer->getPostcode();
+                $person['telephone'] = $customer->getTelephone();
+                $person['fax'] = $customer->getfax();
+                $person['regionId'] = $customer->getRegionId();
+                $street = $customer->getStreet();
+                $person['street'] = $street[0];
+                $person['customer_id'] = $customer->getCustomer_id();
+                $res = $this->amplify->update($customer->getEmail(), $person);
             }
         } catch (Exception $ex) {
             
@@ -698,36 +698,47 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
     public function getAmplifyOrderSuccessPageView(Varien_Event_Observer $evnt) {
         try {
             if ($this->verified) {
-                $c = Mage::getSingleton('customer/session')->getCustomer();
-                if (is_object($c)) {
-                    $customer = Mage::getModel('customer/customer')->load($c->getId());
-                    if (is_object($c)) {
-                        $email = $customer->getEmail();
-                        $customer = $customer->getAddresses();
 
-                        if (is_array($customer)) {
-                            $ekey = array_keys($customer);
-                            $customer = $customer[$ekey[0]];
-                        }
-                        if (is_object($customer)) {
-                            $person['firstname'] = $customer->getFirstname();
-                            $person['lastname'] = $customer->getLastname();
-                            $person['postcode'] = $customer->getPostcode();
-                            $person['telephone'] = $customer->getTelephone();
-                            $person['fax'] = $customer->getfax();
-                            $person['regionId'] = $customer->getRegionId();
-                            $street = $customer->getStreet();
-                            $person['street'] = $street[0];
-                            $person['customerId'] = $customer->getCustomerId();
-                            $res = $this->amplify->update($email, $person);
-                        }
+                $order_id = Mage::getSingleton('checkout/session')->getLastRealOrderId();
+                $order = Mage::getModel('sales/order')->loadByIncrementId($order_id);
+
+
+                $customerAddressId = Mage::getSingleton('customer/session')->getCustomer()->getDefaultShipping();
+                if ($customerAddressId) {
+                    $customer = Mage::getModel('customer/address')->load($customerAddressId);
+
+                    if (is_object($customer)) {
+                        $person['firstname'] = $customer->getFirstname();
+                        $person['lastname'] = $customer->getLastname();
+
+                        $person['postcode'] = $customer->getPostcode();
+                        $person['telephone'] = $customer->getTelephone();
+                        $person['fax'] = $customer->getfax();
+                        $person['customerId'] = $customer->getCustomerId();
+                        $person['company'] = $customer->getCompany();
+                        //     $person['region'] = $customer->getRegion();
+                        $person['street'] = $customer->getStreetFull();
+                    }
+                    $person = array_filter($person);
+                    $res = $this->amplify->update($email, $person);
+                } else {
+                    $customer = $order->getShippingAddress();
+                    if (is_object($customer)) {
+                        $person['firstname'] = $customer->getFirstname();
+                        $person['lastname'] = $customer->getLastname();
+
+                        $person['postcode'] = $customer->getPostcode();
+                        $person['telephone'] = $customer->getTelephone();
+                        $person['fax'] = $customer->getfax();
+                        $person['customerId'] = $customer->getCustomerId();
+                        $person['company'] = $customer->getCompany();
+                        //     $person['region'] = $customer->getRegion();
+                        $person['street'] = $customer->getStreetFull();
                     }
                 }
 
 
-                $order_id = Mage::getSingleton('checkout/session')->getLastRealOrderId();
-                $order = Mage::getModel('sales/order')->loadByIncrementId($order_id);
-//                $items = $order->getAllItems();
+
                 $items = $order->getAllVisibleItems();
                 $itemcount = count($items);
                 $name = array();
@@ -808,17 +819,15 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
     public function getAmplify_checkout_allow_guest($evnt) {
         try {
             if ($this->verified) {
+//                $mageObj = Mage::getSingleton('core/session');
+//                $visitor_data = $mageObj->visitor_data;
 
-                $mageObj = Mage::getSingleton('customer/session')->isLoggedIn();
-                $mageObj = Mage::getSingleton('core/session');
-                $visitor_data = $mageObj->visitor_data;
                 $getquote = $evnt->getQuote();
+//                $checkout = Mage::getSingleton('checkout/type_onepage');
                 $data = array_filter($getquote->getData());
                 Mage::getModel('core/cookie')->set('amplify_email', $data['customer_email']);
-
-
                 $person = array();
-                $person['WebId'] = Mage::app()->getWebsite()->getId();
+                $person['webId'] = Mage::app()->getWebsite()->getId();
                 $person['storeId'] = Mage::app()->getStore()->getId();
                 $person = array_filter($person);
                 $this->amplify->identify($data['customer_email'], $data['customer_firstname']);
@@ -914,7 +923,9 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
 
     public function getAmplifyCatalogProductView(Varien_Event_Observer $evnt) {
         try {
+
             if ($this->verified) {
+
 
                 $product = $evnt->getEvent()->getProduct();
                 $catCollection = $product->getCategoryCollection();
@@ -1173,4 +1184,275 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
         return $this;
     }
 
+    public function sendData() {
+        Mage::app()->getCacheInstance()->cleanType('config');
+        $sendOrderFlag = Mage::getStoreConfig(self::XML_PATH_SEND_ORDER_STATUS);
+        if ($sendOrderFlag && $this->verified) {
+//            $startTime = microtime(true);
+            $processDate = Mage::getStoreConfig('betaout_amplify_options/settings/_process_date');
+            $orders = Mage::getModel('sales/order')->getCollection()
+//                         ->addAttributeToSelect(array('increment_id',base_grand_total))
+                    ->addAttributeToSelect('customer_email')
+                    ->addAttributeToSelect('customer_firstname')
+                    ->addAttributeToSelect('customer_lastname')
+                    ->addAttributeToSelect('shipping_description')
+                    ->addAttributeToSelect('order_currency_code')
+                    ->addAttributeToSelect('increment_id')->
+                    addAttributeToSelect('grand_total')->
+                    addAttributeToSelect('subtotal')->
+                    addAttributeToSelect('remote_ip')->
+                    addAttributeToSelect('store_id')->
+                    addAttributeToSelect('discount_amount')->
+                    addAttributeToSelect('coupon_code')->
+//                        addAttributeToSelect('total_qty_ordered')->
+                    addAttributeToSelect('shipping_address_id')->
+                    addAttributeToSelect('billing_address_id')->
+                    addAttributeToSelect('created_at')->
+                    addAttributeToSelect('shipping_incl_tax')->
+                    addAttributeToSelect('created_at')
+                    ->addAttributeToSelect('status')
+                    ->addAttributeToSort('created_at', 'DESC')
+                    ->addAttributeToFilter('created_at', array('lt' => $processDate, 'date' => true))
+                    ->addAttributeToFilter('status', array('eq' => Mage_Sales_Model_Order::STATE_COMPLETE))
+//                        ->addAttributeToFilter('created_at', array('from' => $fromDate, 'to' => $toDate))
+                    ->setPageSize(10);
+
+//            $pages = $orders->getLastPageNumber();
+            $currentPage = 1;
+//                if ($currentPage >= $pages) {
+//                    $processDate = gmdate('Y-m-d H:i:s', strtotime($processDate, '-1 days'));
+//                }
+//                do {
+            $orders->setCurPage($currentPage);
+            $orders->load();
+
+            $count = count($orders);
+            if ($count <= 0)
+                Mage::getModel('core/config')->saveConfig('betaout_amplify_options/order/cron_setting', $this->_schedule);
+
+
+            foreach ($orders as $order) {
+                $order_id = $order->getIncrementId();
+                $order = Mage::getModel('sales/order')->loadByIncrementId($order_id);
+                $items = $order->getAllVisibleItems();
+                $itemcount = count($items);
+                $name = array();
+                $unitPrice = array();
+                $sku = array();
+                $ids = array();
+                $qty = array();
+                $i = 0;
+                $actionData = array();
+
+                foreach ($items as $itemId => $item) {
+
+                    $product = $item;
+
+                    $product = Mage::getModel('catalog/product')->load($product->getProductId());
+                    $categoryIds = $product->getCategoryIds();
+                    $cateHolder = array();
+                    foreach ($categoryIds as $cat) {
+                        $cateName = Mage::getModel('catalog/category')->load($cat)->getName();
+                        $cateHolder[] = $cateName;
+                    }
+                    $categoryName = implode(",", $cateHolder);
+                    $actionData[$i]['productId'] = $product->getId();
+                    $actionData[$i]['productTitle'] = $product->getName();
+                    $actionData[$i]['sku'] = $product->getSku();
+                    $actionData[$i]['price'] = $product->getPrice();
+                    $actionData[$i]['currency'] = Mage::app()->getStore()->getBaseCurrencyCode();
+                    $actionData[$i]['specialPrice'] = $product->getFinalPrice();
+                    $actionData[$i]['status'] = $product->getStatus();
+                    $actionData[$i]['productPictureUrl'] = $product->getImageUrl();
+                    $actionData[$i]['pageUrl'] = $product->getProductUrl();
+                    $actionData[$i]['weight'] = $product->getWeight();
+                    $actionData[$i]['stockAvailability'] = $stock_data ? $stock_data : 2;
+                    $actionData[$i]['size'] = $product->getResource()->getAttribute('size') ? $product->getAttributeText('size') : false;
+                    $actionData[$i]['color'] = $product->getResource()->getAttribute('color') ? $product->getAttributeText('color') : false;
+                    $actionData[$i]['brandName'] = $product->getResource()->getAttribute('manufacturer') ? $product->getAttributeText('manufacturer') : false;
+                    $actionData[$i]['qty'] = (int) $item->getQtyOrdered();
+                    $actionData[$i]['category'] = $categoryName;
+//                    $actionData[$i]['couponCode'] = Mage::getSingleton('checkout/session')->getQuote()->getCouponCode() ;
+                    $actionData[$i]['discount'] = $item->getDiscountAmount();
+//                    $actionData[$i]['discount'] = $item->getBaseDiscountAmount();
+                    $i++;
+                }
+
+                $cart = Mage::getSingleton('checkout/cart');
+                $TotalPrice = $order->getGrandTotal();
+                $totalShippingPrice = $order->getShippingAmount();
+                $subTotalPrice = $TotalPrice - $totalShippingPrice;
+                $subTotalPrice = $order->getSubtotal();
+                $orderInfo["subtotalPrice"] = $subTotalPrice;
+                $orderInfo["totalPrice"] = $TotalPrice;
+                $orderInfo["totalShippingPrice"] = $totalShippingPrice;
+                $orderInfo['orderId'] = $order_id;
+                $orderInfo['ip'] = $order->getRemoteIp();
+                $orderInfo['createdTime'] = $processDate = $order->getCreatedAt();
+                $orderInfo['promocode'] = $order->getCouponCode();
+                $orderInfo['totalDiscount'] = abs($order->getDiscountAmount());
+//                        $orderInfo['DiscountPer'] = abs($order->getDiscountPercent());
+//                        $orderInfo['DiscountDesc'] = $order->getDiscountDescription();
+                $orderInfo['currency'] = $order->getOrderCurrencyCode();
+//                        $orderInfo['abandonedCheckoutUrl'] = Mage::getUrl('checkout/cart');
+                $orderInfo['totalTaxes'] = $order->getShippingTaxAmount();
+                $orderInfo['ordStatus'] = $order->getStatus();
+
+//                $orderInfo['totalQty'] = $order->totalQty();
+
+                $actionDescription = array(
+                    'action' => 'purchased',
+                    'email' => $order->getCustomerEmail(),
+                    'cartInfo' => array_filter($orderInfo),
+                    'products' => array_filter($actionData)
+                );
+                $res = $this->amplify->send_old_order($actionDescription);
+            }
+            Mage::getConfig()->saveConfig('betaout_amplify_options/settings/_process_date', $processDate)->cleanCache();
+            Mage::app()->reinitStores();
+            Mage::getModel('core/config')->saveConfig('betaout_amplify_options/settings/_process_date', $processDate);
+//            Mage::getModel('core/variable')->loadByCode('myproject_next_api_id');
+//            $endTime = microtime(true);
+//                    $currentPage++;
+//                    //clear collection and free memory
+//                    $orders->clear();
+//                } while ($currentPage <= $pages);
+//       
+        }
+    }
+
+    public function disableModuless($moduleName = "Betaout_Amplify") {
+        // Disable the module itself
+        $nodePath = "modules/$moduleName/active";
+        if (Mage::helper('core/data')->isModuleEnabled($moduleName)) {
+            Mage::getConfig()->setNode($nodePath, 'false', true);
+        }
+
+        // Disable its output as well (which was already loaded)
+        $outputPath = "advanced/modules_disable_output/$moduleName";
+        if (!Mage::getStoreConfig($outputPath)) {
+            Mage::app()->getStore()->setConfig($outputPath, true);
+        }
+//        ->addAttributeToSort('order', 'ASC')
+//        $customerCollection = Mage::getModel('customer/customer')->getCollection();
+//    $customerCollection->setPageSize($limit);
+//    $customerCollection->setCurPage(1);
+    }
+
+    public function getCustomerssss() {
+        $customerCollection = Mage::getModel('customer/customer')->getCollection(); //Fetch all Customers from magento
+        $defaultData = array();
+        $finalData = array();
+        foreach ($customerCollection as $cust) {
+            $data = array();
+            $customer = Mage::getModel('customer/customer')->load($cust->getId()); // Get Customer info from Customer Id
+            $defaultData = $customer->getData(); //Get Customer data
+
+            if (array_key_exists('default_billing', $defaultData)) {
+                $billingAddress = Mage::getModel('customer/address')->load($defaultData['default_billing']);
+                $data['default_billing'] = $billingAddress->getData();
+            }
+
+            if (array_key_exists('default_shipping', $defaultData)) {
+                $shippingAddress = Mage::getModel('customer/address')->load($defaultData['default_shipping']);
+                $data['default_shipping'] = $shippingAddress->getData();
+            }
+
+            $finalData[] = array_merge($customer->getData(), $data);
+        }
+        return $finalData;
+    }
+
+    public function updateIndexss() {
+        $productsCollection = Mage::getModel('catalog/product')->getCollection()
+                ->addAttributeToSelect(array('name', 'image', 'url_key', 'price', 'visibility'));
+
+        $productsCollection->setPageSize(100);
+
+        $pages = $productsCollection->getLastPageNumber();
+        $currentPage = 1;
+
+        do {
+            $productsCollection->setCurPage($currentPage);
+            $productsCollection->load();
+
+            foreach ($productsCollection as $_product) {
+
+                $insertData = array(
+                    'entity_id' => $_product->getId(),
+                    'title' => $_product->getName(),
+                    'image' => $_product->getImage(),
+                    'url' => $_product->getUrlKey(),
+                    'price' => $_product->getFinalPrice(),
+                );
+//
+//                $this->_getWriteAdapter()->insertOnDuplicate(
+//                        $this->getTable('atwix_sonar/suggestions'), $insertData, array('title', 'image', 'url', 'price')
+//                );
+            }
+
+            $currentPage++;
+            //clear collection and free memory
+            $productsCollection->clear();
+        } while ($currentPage <= $pages);
+
+
+
+
+        /**
+         * $pages = $productsCollection->getLastPageNumber();
+          for($currentPage = 1; $currentPage <= $pages; $currentPage++ {
+          __ $productsCollection->setCurPage($currentPage);
+          __ foreach ($productsCollection as $_product) {
+          ____ // do things
+          __ }
+          __ $productsCollection->clear();
+          }
+         */
+        /*
+         * fech cart info
+         * $collection = Mage::getResourceModel('reports/quote_collection');
+          $collection->prepareForAbandonedReport();
+          $output = $collection->load()->toArray();
+
+         */
+    }
+
+    protected function _prepareCollectionssss() {
+        $customer = Mage::registry('current_customer');
+        $storeIds = Mage::app()->getWebsite($this->getWebsiteId())->getStoreIds();
+
+        $quote = Mage::getModel('sales/quote')
+                ->setSharedStoreIds($storeIds)
+                ->loadByCustomer($customer);
+
+        if ($quote) {
+            $collection = $quote->getItemsCollection(false);
+        } else {
+            $collection = new Varien_Data_Collection();
+        }
+
+        $collection->addFieldToFilter('parent_item_id', array('null' => true));
+
+        $this->setCollection($collection);
+
+        return parent::_prepareCollection();
+    }
+
+    function getAllStoreIdsss() {
+
+        //How to get all Store Ids in Magento
+        $allStores = Mage::app()->getStores();
+        foreach ($allStores as $_eachStoreId => $val) {
+            $_storeCode = Mage::app()->getStore($_eachStoreId)->getCode();
+            $_storeName = Mage::app()->getStore($_eachStoreId)->getName();
+            $_storeId = Mage::app()->getStore($_eachStoreId)->getId();
+            echo $_storeId;
+            echo $_storeCode;
+            echo $_storeName;
+        }
+    }
+
 }
+?>
+

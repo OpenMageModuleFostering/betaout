@@ -1,7 +1,7 @@
 <?php
 //$startTime = microtime(true);
 try {
-    $model = Mage::getModel('betaout_amplify/key');
+//    $model = Mage::getModel('betaout_amplify/key');
     if (Mage::getSingleton('customer/session')->isLoggedIn()) {
 
         $c = Mage::getSingleton('customer/session')->getCustomer();
@@ -36,7 +36,7 @@ try {
                 };
             }
             _amplify("//d3oa6jk77hlbow.cloudfront.net/tejas.min.js");
-            //            _amplify("//1.amplify.to/tejasv2/testerNew.js?v=47");
+//                        _amplify("//1.amplify.to/tejasv2/testerNew.js?v=47");
             window.amplifyInit = function () {
 
                 Amplify.identify({

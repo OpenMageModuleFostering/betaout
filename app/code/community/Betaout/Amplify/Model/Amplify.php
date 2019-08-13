@@ -67,7 +67,7 @@ class Amplify {
     /**
      * amplify host
      */
-    public $host = 'amplify.to';
+    public $host = 'betaout.com';
 
     /**
      * amplify version
@@ -423,9 +423,11 @@ class Amplify {
     }
 
     public static $CURL_OPTS = array(
-        CURLOPT_CONNECTTIMEOUT => 10,
+       CURLOPT_CONNECTTIMEOUT_MS=>2000,
+        
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 60,
+     
+        CURLOPT_TIMEOUT_MS=>2000,
         CURLOPT_USERAGENT => 'amplify-php-1.0',
     );
 
@@ -607,7 +609,8 @@ class Amplify {
         } else {
             $options[CURLOPT_HTTPHEADER] = array('Expect:');
         }
-
+      
+        
         curl_setopt_array($ch, $options);
         $result = curl_exec($ch);
 

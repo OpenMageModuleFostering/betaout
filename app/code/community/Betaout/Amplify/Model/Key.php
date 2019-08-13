@@ -36,7 +36,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
     public function getAmplifyCheckOrderStatus($observer) {
 
         try {
-            if ($this->verified) {
+            if ($this->verified && is_object($observer)) {
                 $order = $observer->getEvent()->getOrder();
 
 
@@ -101,7 +101,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
 
     public function getAmplifyEventRemoveFromCart(Varien_Event_Observer $observer) {
         try {
-            if ($this->verified) {
+            if ($this->verified && is_object($observer)) {
                 $product = $observer->getEvent()->getQuote_item();
 
                 $actionData = array();
@@ -192,9 +192,11 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     'action' => 'add_to_cart',
                     'products' => $actionData
                 );
-
+               
 //                $startTime = microtime(true);
                 $res = $this->amplify->customer_action($actionDescription);
+//          
+//                
 //                $endTime = microtime(true);
 //                echo "total Execution time ==" . ($endTime - $startTime);
             }
@@ -817,8 +819,6 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     'products' => $actionData
                 );
                 $res = $this->amplify->customer_action($actionDescription);
-//                print_r($actionDescription);
-//                die;
 //              Mage::getSingleton('customer/session')->getCustomer()->getDefaultBillingAddress();
 //                $_shippingAddress = $order->getShippingAddress();
 //                $shipppingDetails['shippingCity'] = $_shippingAddress->getCity();

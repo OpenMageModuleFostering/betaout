@@ -102,7 +102,7 @@
                         </shareTracking>
                     </fields>
                 </settings>
-                <conflictchecker>
+<!--                <conflictchecker>
                     <label>Conflict Checker</label>
                     <frontend_type>text</frontend_type>
                     <sort_order>40</sort_order>
@@ -122,7 +122,7 @@
                             <show_in_store>1</show_in_store>
                         </check_conflicts>
                     </fields>
-                </conflictchecker>
+                </conflictchecker>-->
 <!--                <order translate="label">
                     <label>What's about previous data</label>
                     <frontend_type>text</frontend_type>

@@ -1,5 +1,4 @@
 <?php
-ini_set("display_errors",1);
 require_once 'Amplify.php';
 require_once('app/Mage.php');
 
@@ -111,17 +110,18 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $actionData[0]['qty'] = (int) $product->getQty();
                 $actionData[0]['category'] = "";
                 $actionData[0]['discount'] = abs($product->getPrice() - $product->getFinalPrice());
+                $subprice=(int) $product->getQty()*$product->getPrice();
                 $cart = Mage::getSingleton('checkout/cart');
                 $subTotalPrice = $cart->getQuote()->getGrandTotal();
-                $orderInfo["subtotalPrice"] = $subTotalPrice;
+                $orderInfo["subtotalPrice"] = $subTotalPrice-$subprice;
                 $actionDescription = array(
                     'action' => 'removed_from_cart',
                     'email' => $this->getCustomerIdentity(),
                     'or' => $orderInfo,
                     'pd' => $actionData
                 );
-               
                 $res = $this->amplify->customer_action($actionDescription);
+             
             }
         } catch (Exception $ex) {
             
@@ -129,8 +129,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
     }
 
     public function getAmplifyEventAddToCart(Varien_Event_Observer $evnt) {
-
         try {
+            
             if ($this->verified) {
                
                 $event = $evnt->getEvent();
@@ -180,13 +180,13 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $subTotalPrice = $cart->getQuote()->getGrandTotal();
                 $orderInfo["subtotalPrice"] = $subTotalPrice;
                 $orderInfo['abandonedCheckoutUrl'] = Mage::getUrl('checkout/cart');
+                $orderInfo['currency']=Mage::app()->getStore()->getBaseCurrencyCode();
                 $actionDescription = array(
                     'or' => $orderInfo,
                     'email' => $this->getCustomerIdentity(),
                     'action' => 'add_to_cart',
                     'pd' => $actionData
                 );
-               
                 $res = $this->amplify->customer_action($actionDescription);
             }
         } catch (Exception $ex) {
@@ -756,13 +756,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
     }
 
     public function getAmplifySales_order_save_commit_after($observer) {
-//  $order = $observer->getOrder();
-//  echo $order->getIncrementId();
-//  echo $order->getState();
   
     }
-
-// checkout_cart_update_items_after
 
     /**
      * @param Varien_Event_Observer $observer
@@ -770,7 +765,64 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
      *
      */
     public function getAmplify_cartUpdate(Varien_Event_Observer $observer) {
-
+        try {
+            if ($this->verified) {
+             $i=0;
+             $subdiff=0;
+             $actionData = array();
+            foreach ($observer->getCart()->getQuote()->getAllVisibleItems() as $product) {
+                
+              if ($product->hasDataChanges()) {
+                 // print_r($product);
+                $productId = $product->getProductId();
+                $catCollection = $product->getCategoryCollection();
+                 
+                $categs = array();//$catCollection->exportToArray();
+                $cateHolder = array();
+               
+                $productName = $product->getName();
+                $sku = $productName . "_" . $product->getSku();
+                $qty = $product->getPrice();
+                $stock_data = $product->getIs_in_stock();
+            
+                $actionData[$i]['productId'] = $product->getProductId();
+                $actionData[$i]['productTitle'] = $product->getName();
+                $actionData[$i]['sku'] = $product->getSku();
+                $actionData[$i]['price'] = $product->getPrice();
+                $actionData[$i]['currency'] = Mage::app()->getStore()->getBaseCurrencyCode();
+                $actionData[$i]['specialPrice'] = $product->getPrice();
+                $actionData[$i]['status'] = $product->getStatus();
+                $actionData[$i]['productPictureUrl'] = $product->getImageUrl();
+                $actionData[$i]['pageUrl'] = $product->getProductUrl();
+                $actionData[$i]['weight'] = $product->getWeight();
+                $oldQty=(int)$product->getOrigData('qty');
+                $newQty=(int) $product->getQty();
+                $qtyDiff=0;
+                $subdiff=$subdiff+($newQty-$oldQty)*$product->getPrice();
+               
+                $actionData[$i]['qty'] = (int) $product->getQty();
+                $actionData[$i]['category'] = $cateHolder;
+                $i++;
+                }
+              }
+                $cart = Mage::getSingleton('checkout/cart');
+                $subTotalPrice = $cart->getQuote()->getGrandTotal();
+                $orderInfo["subtotalPrice"] = $subTotalPrice+$subdiff;
+                $orderInfo['abandonedCheckoutUrl'] = Mage::getUrl('checkout/cart');
+                $orderInfo['currency']=Mage::app()->getStore()->getBaseCurrencyCode();
+                $actionDescription = array(
+                    'or' => $orderInfo,
+                    'email' => $this->getCustomerIdentity(),
+                    'action' => 'update_cart',
+                    'pd' => $actionData
+                );
+               
+               $res = $this->amplify->customer_action($actionDescription);
+                       
+            }
+        } catch (Exception $ex) {
+            
+        }
     }
 
     public function getAmplifyCancelOrderItem($observer) {
@@ -778,135 +830,6 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
     }
 
     public function sendData() {
-//        Mage::log("WORKS!");
-//        Mage::app()->getCacheInstance()->cleanType('config');
-//        $sendOrderFlag =true;// Mage::getStoreConfig(self::XML_PATH_SEND_ORDER_STATUS);
-//        if ($sendOrderFlag && $this->verified) {
-////            $startTime = microtime(true);
-//            $processDate = Mage::getStoreConfig('betaout_amplify_options/settings/_process_date');
-//            $orders = Mage::getModel('sales/order')->getCollection()
-//                    ->addAttributeToSelect('customer_email')
-//                    ->addAttributeToSelect('customer_firstname')
-//                    ->addAttributeToSelect('customer_lastname')
-//                    ->addAttributeToSelect('shipping_description')
-//                    ->addAttributeToSelect('order_currency_code')
-//                    ->addAttributeToSelect('increment_id')->
-//                    addAttributeToSelect('grand_total')->
-//                    addAttributeToSelect('subtotal')->
-//                    addAttributeToSelect('remote_ip')->
-//                    addAttributeToSelect('store_id')->
-//                    addAttributeToSelect('discount_amount')->
-//                    addAttributeToSelect('coupon_code')->
-//                    addAttributeToSelect('shipping_address_id')->
-//                    addAttributeToSelect('billing_address_id')->
-//                    addAttributeToSelect('created_at')->
-//                    addAttributeToSelect('shipping_incl_tax')->
-//                    addAttributeToSelect('created_at')
-//                    ->addAttributeToSelect('status')
-//                    ->addAttributeToSort('created_at', 'DESC')
-//                    ->addAttributeToFilter('created_at', array('to' => $processDate, 'date' => true))
-//                    //->addAttributeToFilter('status', array('eq' => Mage_Sales_Model_Order::STATE_COMPLETE))
-//                    ->setPageSize(10);
-//            $currentPage = 1;
-//            $orders->setCurPage($currentPage);
-//            $orders->load();
-//
-//            $count = count($orders);
-//            if ($count <= 0)
-//                Mage::getModel('core/config')->saveConfig('betaout_amplify_options/order/cron_setting', $this->_schedule);
-//            $flage = 1;
-//
-//            foreach ($orders as $order) {
-//                if ($flage) {
-//                    $flage = 0;
-//                    continue;
-//                }
-//                $order_id = $order->getIncrementId();
-//                $order = Mage::getModel('sales/order')->loadByIncrementId($order_id);
-//                $items = $order->getAllVisibleItems();
-//                $itemcount = count($items);
-//                $name = array();
-//                $unitPrice = array();
-//                $sku = array();
-//                $ids = array();
-//                $qty = array();
-//                $i = 0;
-//                $actionData = array();
-//
-//                foreach ($items as $itemId => $item) {
-//
-//                    $product = $item;
-//
-//                    $product = Mage::getModel('catalog/product')->load($product->getProductId());
-//                    $categoryIds = $product->getCategoryIds();
-//                    $cateHolder = array();
-//                   
-//                    foreach ($categoryIds as $cat) {
-//                    $cateName = Mage::getModel('catalog/category')->load($cat['entity_id']);
-//                    $name=$cateName->getName();
-//                    $id=$cateName->getEntityId();
-//                    $pid=$cateName->getParent_id();
-//                    $cateHolder[$id] = array("n"=>$name,"p"=>$pid);
-//                   }
-//                    $cateHolder[1] = array("n"=>"root catalog","p"=>0);
-//                    $categoryName = implode(",", $cateHolder);
-//                    $actionData[$i]['productId'] = $product->getId();
-//                    $actionData[$i]['productTitle'] = $product->getName();
-//                    $actionData[$i]['sku'] = $product->getSku();
-//                    $actionData[$i]['price'] = $product->getPrice();
-//                    $actionData[$i]['currency'] = Mage::app()->getStore()->getBaseCurrencyCode();
-//                    $actionData[$i]['specialPrice'] = $product->getFinalPrice();
-//                    $actionData[$i]['status'] = $product->getStatus();
-//                    $actionData[$i]['productPictureUrl'] = $product->getImageUrl();
-//                    $actionData[$i]['pageUrl'] = $product->getProductUrl();
-//                    $actionData[$i]['weight'] = $product->getWeight();
-//                    $actionData[$i]['stockAvailability'] = $stock_data ? $stock_data : 2;
-//                    $actionData[$i]['size'] = $product->getResource()->getAttribute('size') ? $product->getAttributeText('size') : false;
-//                    $actionData[$i]['color'] = $product->getResource()->getAttribute('color') ? $product->getAttributeText('color') : false;
-//                    $actionData[$i]['brandName'] = $product->getResource()->getAttribute('manufacturer') ? $product->getAttributeText('manufacturer') : false;
-//                    $actionData[$i]['qty'] = (int) $item->getQtyOrdered();
-//                    $actionData[$i]['category'] = $cateHolder;
-////                    $actionData[$i]['couponCode'] = Mage::getSingleton('checkout/session')->getQuote()->getCouponCode() ;
-//                    $actionData[$i]['discount'] = $item->getDiscountAmount();
-//                    $actionData[$i]['totalProductPrice']=$item->getRowTotal()-$item->getDiscountAmount();
-////                    $actionData[$i]['discount'] = $item->getBaseDiscountAmount();
-//                    $i++;
-//                }
-//
-//                $cart = Mage::getSingleton('checkout/cart');
-//                $TotalPrice = $order->getGrandTotal();
-//                $totalShippingPrice = $order->getShippingAmount();
-//                $orTotalPrice = $TotalPrice - $totalShippingPrice;
-//                $subTotalPrice = $order->getSubtotal();
-//                $orderInfo["subtotalPrice"] = $orTotalPrice;
-//                $orderInfo["totalPrice"] = $TotalPrice;
-//                $orderInfo["totalShippingPrice"] = $totalShippingPrice;
-//                $orderInfo['orderId'] = $order_id;
-//                $orderInfo['ip'] = $order->getRemoteIp();
-//                $orderInfo['createdTime'] = $processDate = $order->getCreatedAt();
-//                $orderInfo['promocode'] = $order->getCouponCode();
-//                $orderInfo['totalDiscount'] = abs($order->getDiscountAmount());
-//                $orderInfo['currency'] = $order->getOrderCurrencyCode();
-//                $orderInfo['financialStatus'] = 'paid';
-//                $orderInfo['totalTaxes'] = $order->getShippingTaxAmount();
-//                $orderInfo['ordStatus'] = $order->getStatus();
-//
-//                $actionDescription = array(
-//                    'action' => 'purchased',
-//                    'email' => $order->getCustomerEmail(),
-//                    'cartInfo' => array_filter($orderInfo),
-//                    'products' => array_filter($actionData)
-//                );
-//                Mage::log($actionDescription);
-//                $this->amplify->customer_action($actionDescription);
-//                //$res = $this->amplify->send_old_order($actionDescription);
-//            }
-//            Mage::getConfig()->saveConfig('betaout_amplify_options/settings/_process_date', $processDate)->cleanCache();
-//            Mage::app()->reinitStores();
-//     
-//        }
     }
 
 }
-?>
-

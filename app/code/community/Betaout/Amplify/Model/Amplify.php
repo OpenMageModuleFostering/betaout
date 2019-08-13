@@ -823,5 +823,3 @@ class Amplify {
         return $visitorData['visitor_id'];
     }
 }
-
-?>

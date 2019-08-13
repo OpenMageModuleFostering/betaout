@@ -317,7 +317,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
             if ($this->verified) {
 
                 $subscriber = $evnt->getEvent()->getSubscriber();
-                $this->getCustomerIdentity();
+                $this->amplify->identify($subscriber->subscriber_email);
+              
                 if ($subscriber->getStatus() == Mage_Newsletter_Model_Subscriber::STATUS_SUBSCRIBED) {
 
                     $this->event('subscribed_to_newsletter', array('action' => 'subscribed_to_newsletter'));

@@ -1,0 +1,52 @@
+<!--<script>
+if(Ajax.Responders){
+
+    Ajax.Responders.register({
+
+      onComplete: function(data) {
+
+        if(!data.url.include("progress") && !data.url.include("getAdditional")) {
+
+            if(data.url.include("saveOrder")) {
+
+                Amplify.addEvent("",{'checkout_process_completed':{
+                                    'step': 'checkout_process_completed'
+                                }});
+
+            } else if(accordion.currentSection) {
+                temp=(accordion.currentSection).split("-");
+                evtName='checkout_process_' + temp[1];
+                 if(evtName=="checkout_process_billing"){
+                Amplify.addEvent("",{"checkout_process_billing":{
+                                    'step': accordion.currentSection
+
+                                }});
+                        }
+                         if(evtName=="checkout_process_payment"){
+                Amplify.addEvent("",{"checkout_process_payment":{
+                                    'step': accordion.currentSection
+
+
+                                }});
+                        }
+                         if(evtName=="checkout_process_review"){
+                Amplify.addEvent("",{"checkout_process_review":{
+                                    'step': accordion.currentSection
+
+
+                                }});
+                        }
+
+
+
+
+
+            }
+        }
+
+      }
+
+    });
+}
+
+</script>-->

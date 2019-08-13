@@ -1,0 +1,53 @@
+<?php
+//$startTime = microtime(true);
+try {
+    if (Mage::getSingleton('customer/session')->isLoggedIn()) {
+
+        $c = Mage::getSingleton('customer/session')->getCustomer();
+        $customer = Mage::getModel('customer/customer')->load($c->getId());
+
+        $identity = $customer->getEmail();
+    }
+    if (Mage::getStoreConfig('betaout_amplify_options/settings/amplify_verified')) {
+        ?>
+        <script type="text/javascript">
+            var Amplify = "";
+            AmplifyConnect_Widget = <?php echo Mage::getStoreConfig("betaout_amplify_options/settings/AmplifyConnect_Widget"); ?>;
+            shareTracking = "<?php echo Mage::getStoreConfig("betaout_amplify_options/settings/shareTracking"); ?>";
+            urlTracking = "<?php echo Mage::getStoreConfig("betaout_amplify_options/settings/urlTracking"); ?>";
+            API_Key = '<?php echo Mage::getStoreConfig("betaout_amplify_options/settings/amplify_secret"); ?>';
+            Project_Id = '<?php echo Mage::getStoreConfig("betaout_amplify_options/settings/amplify_projectId"); ?>';
+            function _amplify(u) {
+                var d = document, f = d.getElementsByTagName("script")[0], _sc = d.createElement("script");
+                _sc.type = "text/javascript";
+                _sc.async = true;
+                _sc.src = u;
+                f.parentNode.insertBefore(_sc, f);
+                __d = false;
+                _sc.onload = _sc.onreadystatechange = function() {
+                    if (!__d && (!this.readyState || this.readyState === "loaded" || this.readyState === "complete")) {
+                        __d = true;
+                        Amplify = new AmplifyEngine();
+                    }
+                };
+            }
+            _amplify("//d3oa6jk77hlbow.cloudfront.net/tejas.min.js");
+            window.amplifyInit = function() {
+
+                Amplify.identify({
+                    email: '<?php echo $identity; ?>',
+                    name: ''
+                });
+
+            }
+
+        </script>
+
+        <?php
+    };
+} catch (Exception $ex) {
+
+}
+//$endTime = microtime(true);
+//echo "total Execution time ==" . ($endTime - $startTime);
+?>

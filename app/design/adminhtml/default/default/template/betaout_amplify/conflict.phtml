@@ -1,0 +1,52 @@
+<style>
+dl.conflict-values { clear: both;background-color:#ED6502;font-size: 14px; }
+dl.conflict-values dt { float: left; width:6em ; }
+dl.conflict-values dt, dl.conflict-values dd { padding: 3px; }
+</style>
+<fieldset class="grid">
+    <?php $rewrites = $this->getRewrites(); ?>
+    <?php if (is_array($rewrites) && !empty($rewrites)) : ?>
+    <table class="border">
+        <thead>
+            <tr class="headings">
+                <th>Conflict Results</th>
+            </tr>
+        </thead>
+        <tbody>
+             <?php$i=0,$j=0; foreach ($rewrites as $rewrite)$i++?>
+            <?php foreach ($rewrites as $rewrite) : ?>
+                <?php $res=split ('/', $rewrite['file']);if(!(in_array('Betaout', $res))) {?>
+            
+                <tr class="<?php echo $this->getParity(); ?>">
+                    <td>
+			<dl class="conflict-values">
+			    <dt><strong>File :</strong></dt>
+                            <dd><?php echo $rewrite['file']; ?></dd>
+                            <dt><strong>XML Path :</strong></dt>
+                            <dd><?php echo $rewrite['path']; ?></dd>
+<!--                            <dt><strong>Old Value :</strong></dt>
+                            <dd><?php echo $rewrite['oldValue']; ?></dd>-->
+<!--                            <dt><strong>New Value :</strong></dt>
+                            <dd><?php echo $rewrite['newValue']; ?> </dd>-->
+                            <dt><strong>Name:</strong></dt>
+                            <dd><?php echo $rewrite['newValue']; ?> </dd>
+                        </dl>
+                    </td>
+        	</tr>
+                <?php }elseif ($i==$j++){ ?>
+                <tr class="headings">
+                    <th>-------No conflict founded by this conflict checker-------------</th>
+                </tr>
+                <?php ;}endforeach; ?>
+	</tbody>
+    </table>
+    <?php else : ?>
+    <table class="border">
+        <thead>
+            <tr class="headings">
+                <th>-------No conflict founded by this conflict checker-------------</th>
+            </tr>
+        </thead>
+    </table>
+    <?php endif;?>
+</fieldset>

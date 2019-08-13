@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+<layouts>
+    <default>
+        <reference name="head">
+        	<block type="page/html_head" name="betaout_amplify_head" template="betaout_amplify/head.phtml" />
+        </reference>
+    </default>
+    <cms_index_index>
+        <reference name="content">
+            <block type="page/html" name="betaout_amplify_homepage" template="betaout_amplify/homepage.phtml" /> 
+        </reference>
+    </cms_index_index>
+	<catalogsearch_result_index>
+		<reference name="after_body_start">
+			<block type="page/html" name="betaout_amplify_search" template="betaout_amplify/search.phtml" /> 
+		</reference>
+	</catalogsearch_result_index>
+	<catalogsearch_advanced_result>
+		<reference name="after_body_start">
+			<block type="page/html" name="betaout_amplify_search_advanced" template="betaout_amplify/search.phtml" /> 
+		</reference>
+	</catalogsearch_advanced_result>
+	<checkout_onepage_index>
+		<reference name="after_body_start">
+			<block type="page/html" name="betaout_amplify_checkout" template="betaout_amplify/checkout.phtml" /> 
+		</reference>
+	</checkout_onepage_index>
+	<catalog_product_view>
+        <reference name="after_body_start">
+            <block type="page/html" name="betaout_amplify_product" template="betaout_amplify/product.phtml" />
+        </reference>
+    </catalog_product_view>
+    <customer_account_login>
+    	<reference name="after_body_start">
+            <block type="page/html" name="betaout_amplify_login" template="betaout_amplify/login.phtml" />
+        </reference>
+    </customer_account_login>
+    <customer_account_create>
+    	<reference name="after_body_start">
+            <block type="page/html" name="betaout_amplify_create" template="betaout_amplify/create.phtml" />
+        </reference>
+    </customer_account_create>
+    <customer_account_index>
+        <reference name="after_body_start">
+            <block type="page/html" name="betaout_amplify_account" template="betaout_amplify/account.phtml" />
+        </reference>
+    </customer_account_index>
+    <customer_account_edit>
+        <reference name="after_body_start">
+            <block type="page/html" name="betaout_amplify_account_edit" template="betaout_amplify/account_edit.phtml" />
+        </reference>
+    </customer_account_edit>
+    <sales_order_history>
+        <reference name="after_body_start">
+            <block type="page/html" name="betaout_amplify_sales_history" template="betaout_amplify/sales_history.phtml" />
+        </reference>
+    </sales_order_history>
+    <wishlist_index_index>
+        <reference name="after_body_start">
+            <block type="page/html" name="betaout_amplify_wishlist" template="betaout_amplify/wishlist.phtml" />
+        </reference>
+    </wishlist_index_index>
+    <checkout_cart_index>
+    	<reference name="after_body_start">
+            <block type="page/html" name="betaout_amplify_cart" template="betaout_amplify/cart.phtml" />
+        </reference>
+    </checkout_cart_index>
+</layouts>

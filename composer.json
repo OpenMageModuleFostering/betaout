@@ -1,0 +1,16 @@
+{
+    "name": "OpenMageModuleFostering/Betaout",
+    "type": "magento-module",
+    "license": "GPL",
+    "homepage": "",
+    "description": "Betaout - Marketing Personalisation Software and Engagement Platform",
+    "authors": [
+    {
+        "name": "Jitendra Bhadouria",
+        "email": "jitendra@getamplify.com"
+    }
+],
+    "suggest": {
+        "magento-hackathon/magento-composer-installer": "*"
+    }
+}

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<layouts>
+<layout version="0.1.0">
     <betaout_amplify_ajax_index>
      <block type="betaout_amplify" name="root" template="betaout_amplify/conflictchecker/errors.phtml" />
 </betaout_amplify_ajax_index>
-</layouts>
+</layout>

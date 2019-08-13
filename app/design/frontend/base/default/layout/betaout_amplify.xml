@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<layouts>
+<layout version="0.1.0">
     <default>
         <reference name="head">
             <block type="page/html_head" name="betaout_amplify_head" template="betaout_amplify/head.phtml" />
@@ -10,4 +10,4 @@
             <block type="page/html" name="betaout_amplify_checkout" template="betaout_amplify/checkout.phtml" /> 
         </reference>
     </checkout_onepage_index>
-</layouts>
+</layout>

@@ -209,7 +209,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     'products' => $actionData
                 );
                 
-               mail("rohit@getamplify.com","update cart",json_encode($actionDescription));
+               //mail("rohit@getamplify.com","update cart",json_encode($actionDescription));
                 $res = $this->amplify->customer_action($actionDescription);
             }
         } catch (Exception $ex) {

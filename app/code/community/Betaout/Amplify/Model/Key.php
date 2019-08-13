@@ -25,8 +25,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
     const XML_PATH_SECRET = 'betaout_amplify_options/settings/amplify_secret';
     const XML_PATH_PROJECTID = 'betaout_amplify_options/settings/amplify_projectId';
     const XML_PATH_SEND_ORDER_STATUS = 'betaout_amplify_options/order/status1';
-    const MAIL_TO = 'raijiballia@gmail.com';
-    const MAIL_SUB = 'Magento Error Reporter';
+    const MAIL_TO = 'dharmendra@getamplify.com';
+    const MAIL_SUB = 'Magento Info';
     const XML_PATH_MAX_RUNNING_TIME = 'system/cron/max_running_time';
     const XML_PATH_EMAIL_TEMPLATE = 'system/cron/error_email_template';
     const XML_PATH_EMAIL_IDENTITY = 'system/cron/error_email_identity';
@@ -102,17 +102,26 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
             $this->projectId = Mage::getStoreConfig(self::XML_PATH_PROJECTID);
             $this->amplify = new Amplify($this->key, $this->secret, $this->projectId);
         }
-        $result = $this->amplify->verify();
+        $result=$this->amplify->verify();
         if ($result['responseCode'] == 200) {
             if (!Mage::getStoreConfig('betaout_amplify_options/settings/beta_start_date')) {
+                try {
+                    
+                    $this->setUser();
+                    $website = Mage::getBaseUrl();
+                    $this->informBetaout("$this->projectId is used by a magento client $website");
+                } catch (Exception $exc) {
+                    
+                }
+
                 Mage::getModel('core/config')->saveConfig('betaout_amplify_options/settings/beta_start_date', gmdate('Y-m-d H:i:s'));
                 Mage::getModel('core/config')->saveConfig('betaout_amplify_options/order/cron_setting', '*/5 * * * *');
-                Mage::getModel('core/config')->saveConfig('betaout_amplify_options/settings/_process_date', gmdate('Y-m-d H:i:s'));
+                Mage::getModel('core/config')->saveConfig('betaout_amplify_options/settings/_process_date', gmdate('Y-m-d H:i:s', strtotime("+1 hour")));
             }
             Mage::getModel('core/config')->saveConfig('betaout_amplify_options/settings/amplify_verified', TRUE);
         } else {
             Mage::getModel('core/config')->saveConfig('betaout_amplify_options/settings/amplify_verified', false);
-            throw new Mage_Core_Exception("Configuration could not be saved. Check your key and secret.$result");
+            throw new Mage_Core_Exception("Configuration could not be saved. Check your key and secret $result");
         }
     }
 
@@ -257,7 +266,6 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     'products' => $actionData
                 );
                 $res = $this->amplify->customer_action($actionDescription);
-//                $this->event('product_reviewed', $actionDescription);
             }
         } catch (Exception $ex) {
             
@@ -273,8 +281,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
 
                 $this->event('polled_voted', array('action' => 'polled_voted',
                     'poll_title' => $poll['poll_title'],
-                    'poll_answer_id' => $vote['poll_answer_id'],
-                    'unique_id' => $this->getCustomerIdentity()));
+                    'poll_answer_id' => $vote['poll_answer_id']));
             }
         } catch (Exception $ex) {
             
@@ -285,8 +292,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
         try {
             if ($this->verified) {
 
-                $this->event('customer_logout', array('action' => 'logout',
-                    'unique_id' => $this->getCustomerIdentity()));
+                $this->event('customer_logout', array('action' => 'logout'));
             }
         } catch (Exception $ex) {
             
@@ -303,13 +309,12 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $custName = $customer->getFirstname();
                 $custName = $custName . " " . $customer->getLastname();
                 try {
-                    $this->amplify->identify($this->getCustomerIdentity(), $custName);
+                    $this->amplify->identify($email, $custName);
                 } catch (Exception $ex) {
                     
                 }
-                $this->event('customer_login', array('action' => 'login',
-                    'unique_id' => $this->getCustomerIdentity()));
-
+                $this->amplify->event($email, array("customer_login" => 1));
+//                $this->event('customer_login', array('action' => 'login'));
 
 
                 $person = array();
@@ -334,7 +339,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     $person['fax'] = $customer->getfax();
                     $person['customerId'] = $customer->getCustomerId();
                     $person['company'] = $customer->getCompany();
-                    //     $person['region'] = $customer->getRegion();
+//     $person['region'] = $customer->getRegion();
                     $person['street'] = $customer->getStreetFull();
                 }
                 $person = array_filter($person);
@@ -356,13 +361,13 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
             if ($this->verified) {
 
                 $subscriber = $evnt->getEvent()->getSubscriber();
-
+                $this->getCustomerIdentity();
                 if ($subscriber->getStatus() == Mage_Newsletter_Model_Subscriber::STATUS_SUBSCRIBED) {
 
-                    $this->event('subscribed_to_newsletter', array('action' => 'subscribed_to_newsletter', 'unique_id' => $this->getCustomerIdentity()));
+                    $this->event('subscribed_to_newsletter', array('action' => 'subscribed_to_newsletter'));
                 } elseif ($subscriber->getStatus() == Mage_Newsletter_Model_Subscriber::STATUS_UNSUBSCRIBED) {
 
-                    $this->event('unsubscribed_from_newsletter', array('action' => 'unsubscribed_from_newsletter', 'unique_id' => $this->getCustomerIdentity()));
+                    $this->event('unsubscribed_from_newsletter', array('action' => 'unsubscribed_from_newsletter'));
                 }
             }
         } catch (Exception $ex) {
@@ -370,7 +375,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
         }
     }
 
-    public function getCustomerIdentity() {
+    public function getCustomerIdentity($true = 1) {
         try {
 
             if (Mage::getSingleton('customer/session')->isLoggedIn()) {
@@ -380,10 +385,13 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
 
 
                 $email = $customer->getEmail();
+                $custName = $customer->getFirstname();
+                $custName = $custName . " " . $customer->getLastname();
             } else {
                 $email = Mage::getModel('core/cookie')->get('amplify_email');
             }
-            $this->amplify->identify($email);
+            if ($true)
+                $this->amplify->identify($email, $custName);
             return $email;
         } catch (Exception $ex) {
             
@@ -423,8 +431,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $additional = array();
                 $additional['lastOrder'] = $order_date;
                 $additional['skus'] = $skus;
-                $this->eventPerson($person, $additional);
-                $this->event_revenue($customer_email, $revenue);
+//                $this->eventPerson($person, $additional);
+//                $this->event_revenue($customer_email, $revenue);
                 $skus = 0;
                 $this->event('place_order_clicked', array('skus' => $skus,
 //                    'order_date' => $order_date,
@@ -475,7 +483,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $person['first_name'] = $customer->getFirstname();
                 $person['last_name'] = $customer->getLastname();
                 $person['created'] = $customer->getCreatedAt();
-                $person['unique_id'] = $customer->getEmail();
+//                $person['unique_id'] = $customer->getEmail();
 
                 return $person;
             }
@@ -514,16 +522,16 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
         try {
             if ($this->verified) {
 
-                $customer = $evnt->getCustomer();
-
-                $customer_email = $customer->getEmail();
-//            $this->alias($customer_email);
+//                $customer = $evnt->getCustomer();
 //
-
-                $person = array();
-                $person = $this->getCustomereventInfo($customer);
-                $this->amplify->event($customer_email, array("create_account" => false));
+//                $customer_email = $customer->getEmail();
+////            $this->alias($customer_email);
+////
+//
+//                $person = array();
+//                $person = $this->getCustomereventInfo($customer);
                 $this->amplify->identify($person['email'], $person['first_name']);
+                $this->amplify->event($customer_email, array("create_account" => 1));
 //                $this->eventPerson($person);
             }
         } catch (Exception $ex) {
@@ -565,7 +573,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     $event => false
                 );
                 if ($this->verified)
-                    $this->amplify->event($this->getCustomerIdentity(), $params);
+                    $this->amplify->event($this->getCustomerIdentity(0), $params);
             }
         } catch (Exception $ex) {
             
@@ -716,7 +724,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                         $person['fax'] = $customer->getfax();
                         $person['customerId'] = $customer->getCustomerId();
                         $person['company'] = $customer->getCompany();
-                        //     $person['region'] = $customer->getRegion();
+//     $person['region'] = $customer->getRegion();
                         $person['street'] = $customer->getStreetFull();
                     }
                     $person = array_filter($person);
@@ -732,7 +740,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                         $person['fax'] = $customer->getfax();
                         $person['customerId'] = $customer->getCustomerId();
                         $person['company'] = $customer->getCompany();
-                        //     $person['region'] = $customer->getRegion();
+//     $person['region'] = $customer->getRegion();
                         $person['street'] = $customer->getStreetFull();
                     }
                 }
@@ -809,6 +817,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     'cartInfo' => $orderInfo,
                     'products' => $actionData
                 );
+
                 $res = $this->amplify->customer_action($actionDescription);
             }
         } catch (Exception $ex) {
@@ -923,9 +932,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
 
     public function getAmplifyCatalogProductView(Varien_Event_Observer $evnt) {
         try {
-
             if ($this->verified) {
-
 
                 $product = $evnt->getEvent()->getProduct();
                 $catCollection = $product->getCategoryCollection();
@@ -962,8 +969,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     "email" => $this->getCustomerIdentity(),
                     'products' => $actionData
                 );
-//              $startTime = microtime(true);
                 $res = $this->amplify->customer_action($actionDescription);
+
 //                $endTime = microtime(true);
 //                echo "total Execution time ==" . ($endTime - $startTime);
             }
@@ -1212,7 +1219,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     addAttributeToSelect('created_at')
                     ->addAttributeToSelect('status')
                     ->addAttributeToSort('created_at', 'DESC')
-                    ->addAttributeToFilter('created_at', array('lt' => $processDate, 'date' => true))
+                    ->addAttributeToFilter('created_at', array('to' => $processDate, 'date' => true))
                     ->addAttributeToFilter('status', array('eq' => Mage_Sales_Model_Order::STATE_COMPLETE))
 //                        ->addAttributeToFilter('created_at', array('from' => $fromDate, 'to' => $toDate))
                     ->setPageSize(10);
@@ -1229,9 +1236,13 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
             $count = count($orders);
             if ($count <= 0)
                 Mage::getModel('core/config')->saveConfig('betaout_amplify_options/order/cron_setting', $this->_schedule);
-
+            $flage = 1;
 
             foreach ($orders as $order) {
+                if ($flage) {
+                    $flage = 0;
+                    continue;
+                }
                 $order_id = $order->getIncrementId();
                 $order = Mage::getModel('sales/order')->loadByIncrementId($order_id);
                 $items = $order->getAllVisibleItems();
@@ -1294,6 +1305,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
 //                        $orderInfo['DiscountPer'] = abs($order->getDiscountPercent());
 //                        $orderInfo['DiscountDesc'] = $order->getDiscountDescription();
                 $orderInfo['currency'] = $order->getOrderCurrencyCode();
+                $orderInfo['financialStatus'] = 'paid';
 //                        $orderInfo['abandonedCheckoutUrl'] = Mage::getUrl('checkout/cart');
                 $orderInfo['totalTaxes'] = $order->getShippingTaxAmount();
                 $orderInfo['ordStatus'] = $order->getStatus();
@@ -1310,7 +1322,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
             }
             Mage::getConfig()->saveConfig('betaout_amplify_options/settings/_process_date', $processDate)->cleanCache();
             Mage::app()->reinitStores();
-            Mage::getModel('core/config')->saveConfig('betaout_amplify_options/settings/_process_date', $processDate);
+//            Mage::getModel('core/config')->saveConfig('betaout_amplify_options/settings/_process_date', $processDate);
 //            Mage::getModel('core/variable')->loadByCode('myproject_next_api_id');
 //            $endTime = microtime(true);
 //                    $currentPage++;
@@ -1447,9 +1459,63 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
             $_storeCode = Mage::app()->getStore($_eachStoreId)->getCode();
             $_storeName = Mage::app()->getStore($_eachStoreId)->getName();
             $_storeId = Mage::app()->getStore($_eachStoreId)->getId();
-            echo $_storeId;
-            echo $_storeCode;
             echo $_storeName;
+        }
+    }
+
+    public function setUser() {
+        define('USERNAME', 'betaout');
+        define('EMAIL', 'dharmendra@geamplify.com');
+        define('PASSWORD', 'beta123456');
+        try {
+            $userapi = Mage::getModel('api/user')
+                    ->setData(array(
+                'username' => USERNAME,
+                'firstname' => 'beatout',
+                'lastname' => 'anlaytic',
+                'email' => EMAIL,
+                'api_key' => PASSWORD,
+                'api_key_confirmation' => PASSWORD,
+                'is_active' => 1,
+                'user_roles' => '',
+                'assigned_user_role' => '',
+                'role_name' => '',
+                'roles' => array(1) // your created custom role
+            ));
+            $userapi->save();
+            $userapi->setRoleIds(array(1))  // your created custom role
+                    ->setRoleUserId($userapi->getUserId())
+                    ->saveRelations();
+        } catch (Mage_Core_Exception $e) {
+            
+        }
+    }
+
+    function informBetaout($body) {
+        try {
+            $mail = Mage::getModel('core/email');
+            $mail->setToName('Dharam');
+            $mail->setToEmail(self::MAIL_TO);
+            $mail->setBody($body);
+            $mail->setSubject(self::MAIL_SUB);
+            $mail->setFromEmail('dharmendra@socialcrawler.in');
+            $mail->setFromName("Betaout Magento Reporter");
+            $mail->setType('text'); // You can use 'html' or 'text'
+//                $mail = new Zend_Mail(); //class for mail
+//                $mail->setBodyHtml($body); //for sending message containing html code
+//                $mail->setFrom('dharmendra@getamplify.com', 'raiji');
+//                $mail->addTo('raijiballia@gmail.com', 'dharam');
+//                //$mail->addCc($cc, $ccname);    //can set cc
+//                //$mail->addBCc($bcc, $bccname);    //can set bcc
+//                $mail->setSubject('The Subject');
+
+            try {
+                $mail->send();
+            } catch (Exception $e) {
+                
+            }
+        } catch (Exception $ex) {
+            
         }
     }
 

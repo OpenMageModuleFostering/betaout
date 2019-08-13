@@ -65,6 +65,7 @@ class Amplify {
      *
      */
     protected $publicationUrl;
+    protected $agent = 'v9';
 
     /**
      * amplify host
@@ -559,7 +560,7 @@ class Amplify {
                 $requestUrl.="?" . $this->getParams();
                 $this->setRequestUrl($requestUrl);
                 $this->signString();
-                $requestUrl = $this->getRequestUrl() . "&hash=" . $this->getHash() . "&ip=" . Mage::helper('core/http')->getRemoteAddr(true);
+                $requestUrl = $this->getRequestUrl() . "&hash=" . $this->getHash() . "&ip=" . Mage::helper('core/http')->getRemoteAddr(true) . "&agent=" . $this->agent;
                 return $this->makeRequest($requestUrl);
             } catch (Exception $ex) {
                 $this->showError[] = $ex->getCode() . ":" . $ex->getMessage();
@@ -595,6 +596,7 @@ class Amplify {
         $options = self::$CURL_OPTS;
         $options[CURLOPT_URL] = $requestUrl;
 //        print_r($requestUrl);
+
 
         if ($this->debug) {
 //             echo $requestUrl;

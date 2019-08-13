@@ -4,6 +4,7 @@ class Betaout_Amplify_BetaoutorderController extends Mage_Core_Controller_Front_
 
 public function importAction(){
    try{
+    $showdata=isset($_GET['show'])?$_GET['show']:0;
     $startDate=isset($_GET['startDate'])?$_GET['startDate']:date("Y-m-d 00:00:00");
     $endDate=isset($_GET['endDate'])?$_GET['endDate']:date("Y-m-d 23:00:00");
     $status=isset($_GET['status'])?$_GET['status']:"completed";
@@ -63,7 +64,7 @@ foreach ($orders as $order)  {
                     $actionData[$i]['product_url'] = $product->getProductUrl();
                     $actionData[$i]['brandname'] = $product->getResource()->getAttribute('manufacturer') ? $product->getAttributeText('manufacturer') : false;
                     $actionData[$i]['quantity'] = (int) $item->getQtyOrdered();
-                    $actionData[$i]['category'] = $cateHolder;
+                    $actionData[$i]['categories'] = $cateHolder;
                    
                     $i++;
                 }
@@ -82,7 +83,15 @@ foreach ($orders as $order)  {
                 $orderInfo['currency'] = $order->getOrderCurrencyCode();
                 $orderInfo['status'] = 'completed';
                 $orderInfo['tax'] = $order->getShippingTaxAmount();
-                $orderInfo['payment_method']="Custom";
+                try{
+                if(!is_object($order->getPayment())){
+                   $orderInfo['payment_method']="Custom";
+                 }else{
+                  $orderInfo['payment_method'] = $order->getPayment()->getMethodInstance()->getCode();
+                 }
+                }catch(Exception $e){
+                  $orderInfo['payment_method']="Custom";  
+                }
                 
                 $actionDescription = array(
                     'activity_type' => 'purchase',
@@ -91,8 +100,12 @@ foreach ($orders as $order)  {
                     'products' => $actionData,
                     'timestamp'=>Mage::getModel('core/date')->timestamp($order->getData('created_at'))
                 );
-                echo "Time".$order->getData('created_at');
-//             
+                echo "<br/>Time".$order_id."-".$order->getData('created_at');
+                if($showdata){
+                    echo "<pre>";
+                    print_r($actionDescription);
+                   echo "</pre>";
+                }
               
                self::sendData($actionDescription,'ecommerce/activities/');
                
@@ -108,6 +121,7 @@ foreach ($orders as $order)  {
 }
 
 public function addProductAction(){
+    $showdata=isset($_GET['show'])?$_GET['show']:0;
     $limit=isset($_GET['limit'])?$_GET['limit']:"5";
     $cpage=isset($_GET['pageNo'])?$_GET['pageNo']:1;
  $products = Mage::getModel('catalog/product')->getCollection()
@@ -147,6 +161,9 @@ foreach ($products as $product) {
                     'products' => $productData,
                     'timestamp'=> time()
                 );
+  if($showdata){
+        print_r($actionDescription);
+   }
   self::sendData($actionDescription,'ecommerce/products/');
 }
 public function sendData($data,$path){
@@ -159,7 +176,7 @@ public function sendData($data,$path){
         $jdata = json_encode($data);
         $curl = curl_init($url);
         curl_setopt($curl,CURLOPT_HTTPHEADER,array('Content-Type: application/json'));
-        curl_setopt($curl, CURLOPT_CONNECTTIMEOUT_MS, 3000);
+        curl_setopt($curl, CURLOPT_CONNECTTIMEOUT_MS, 10000);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($curl, CURLOPT_POST, true);
         curl_setopt($curl, CURLOPT_POSTFIELDS, $jdata);

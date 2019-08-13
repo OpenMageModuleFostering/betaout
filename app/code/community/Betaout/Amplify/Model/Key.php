@@ -12,6 +12,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
     public $key;
     public $secret;
     public $projectId;
+    public $bdebug=0;
     public $verified;
     public $host = 'y0v.in';
     public $amplify;
@@ -26,6 +27,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
     const XML_PATH_SECRET = 'betaout_amplify_options/settings/amplify_secret';
     const XML_PATH_PROJECTID = 'betaout_amplify_options/settings/amplify_projectId';
     const XML_PATH_SEND_ORDER_STATUS = 'betaout_amplify_options/order/status1';
+    const XML_PATH_DEBUG = 'betaout_amplify_options/settings/amplify_debug';
     const MAIL_TO = 'dharmendra@getamplify.com';
     const MAIL_SUB = 'Magento Info';
     const XML_PATH_MAX_RUNNING_TIME = 'system/cron/max_running_time';
@@ -40,6 +42,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
             $this->secret = Mage::getStoreConfig(self::XML_PATH_SECRET);
             $this->projectId = Mage::getStoreConfig(self::XML_PATH_PROJECTID);
             $this->verified = 1;
+            $this->bdebug = Mage::getStoreConfig(self::XML_PATH_DEBUG);
             $this->amplify = new Amplify($this->key,$this->projectId);
             $this->verified = 1;
             $this->_process_date = Mage::getStoreConfig('betaout_amplify_options/settings/_process_date');
@@ -124,8 +127,6 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $cart = Mage::getSingleton('checkout/cart');
                 
                 $cart_id=$cart->getQuote()->getId();
-                setcookie('_ampCart',$cart_id,time()+604800,'/');
-             
                 $actionData = array();
 
                 $actionData[0]['id'] = $product->getId();
@@ -151,8 +152,10 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     'cart_info' => $cartInfo,
                     'products' => $actionData
                 );
-                
-                //mail("rohit@getamplify.com","add to cart",json_encode($actionDescription));
+                 if($this->bdebug){
+                  mail("rohit@getamplify.com","DEBUG product add to cart",  json_encode($actionDescription));
+                 }
+               
                $res = $this->amplify->customer_action($actionDescription);
              
             }
@@ -309,6 +312,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     $data['phone'] = $customer->getTelephone();
                     $data['customer_id'] = $customer->getCustomerId();
                     try {
+                      $data=  array_filter($data);
                       $this->amplify->identify($data);
                      } catch (Exception $ex) {
                     }
@@ -519,11 +523,14 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
     }
 
     /**
-     * @author Dharmendra Rai
+     * @author Rohit Tyagi
      * @desc verify key and secret while saving them
      */
     public function getAmplifyOrderSuccessPageView(Varien_Event_Observer $evnt) {
         try {
+            if($this->bdebug){
+             mail("rohit@getamplify.com","DEBUG","order start");
+            }
             if ($this->verified) {
                $orderIds = $evnt->getData('order_ids');
                if (empty($orderIds) || !is_array($orderIds)) {
@@ -556,6 +563,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     }
                     $person = array_filter($person);
                     $properties['update']=$person;
+                    $data=  array_filter($data);
                     $res = $this->amplify->userProperties($data, $properties);
                     
                 } else {
@@ -571,11 +579,12 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                         $person['company'] = $customer->getCompany();
                         $person['street'] = $customer->getStreetFull();
                         try {
-                      $this->amplify->identify($data);
+                         $this->amplify->identify($data);
                           } catch (Exception $ex) {
                           }
-                      $person = array_filter($person);
+                       $person = array_filter($person);
                        $properties['update']=$person;
+                       $data=  array_filter($data);
                       $res = $this->amplify->userProperties($data, $properties);
                     }
                 }
@@ -590,20 +599,24 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     $product = $item;
 
                     $product = Mage::getModel('catalog/product')->load($product->getProductId());
-                    $categoryIds = $product->getCategoryIds();
                     $cateHolder = array();
-
-                    foreach ($categoryIds as $cat) {
-                        $cateName = Mage::getModel('catalog/category')->load($cat['entity_id']);
-                        $name = $cateName->getName();
-                        $id = $cateName->getEntityId();
-                        $pid = $cateName->getParent_id();
-                        if ($pid == 1) {
-                            $pid = 0;
+                    try{
+                        $catCollection = $product->getCategoryCollection();
+                        $categs = $catCollection->exportToArray();
+                        foreach ($categs as $cat) {
+                            $cateName = Mage::getModel('catalog/category')->load($cat['entity_id']);
+                            $name = $cateName->getName();
+                            $id = $cateName->getEntityId();
+                            $pid = $cateName->getParent_id();
+                            if ($pid == 1) {
+                                $pid = 0;
+                            }
+                            $cateHolder[] = array_filter(array("cat_id"=>$id,"cat_name" => $name, "parent_cat_id" => $pid));
                         }
-                        $cateHolder[] = array("cat_id"=>$id,"cat_name" => $name, "parent_cat_id" => $pid);
+                    }catch(Exception $e){
+                        
                     }
-
+                    $cateHolder=  array_filter($cateHolder);
                     $actionData[$i]['id'] = $product->getId();
                     $actionData[$i]['name'] = $product->getName();
                     $actionData[$i]['sku'] = $product->getSku();
@@ -649,8 +662,13 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     'order_info' => $orderInfo,
                     'products' => $actionData
                 );
-              
+                if($this->bdebug){
+                 mail("rohit@getamplify.com","DEBUG order data",  json_encode($actionDescription));
+                }
                 $res = $this->amplify->customer_action($actionDescription);
+                 if($this->bdebug){
+                  mail("rohit@getamplify.com","DEBUG order response",  json_encode($res));
+                 }
               }
              }
             }
@@ -731,7 +749,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
     public function getAmplifyCatalogProductView(Varien_Event_Observer $evnt) {
         try {
             if ($this->verified) {
-
+               
                 $product = $evnt->getEvent()->getProduct();
                 $catCollection = $product->getCategoryCollection();
 
@@ -769,6 +787,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     "identifiers" => $this->getCustomerIdentity(),
                     'products' => $actionData
                 );
+               
                 $res = $this->amplify->customer_action($actionDescription);
             }
         } catch (Exception $ex) {

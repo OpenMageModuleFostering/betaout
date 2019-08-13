@@ -51,7 +51,9 @@ foreach ($orders as $order)  {
                         if ($pid == 1) {
                             $pid = 0;
                         }
+                        if(!empty($name)){
                         $cateHolder[] = array("cat_id"=>$id,"cat_name" => $name, "parent_cat_id" => $pid);
+                        }
                     }
 
                     $actionData[$i]['id'] = $product->getId();

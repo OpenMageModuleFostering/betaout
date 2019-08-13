@@ -112,13 +112,15 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $cateHolder = array();
                 foreach ($categs as $cat) {
                     $cateName = Mage::getModel('catalog/category')->load($cat['entity_id']);
-                    $name = $cateName->getName();
+                    $name =$cateName->getName();
                     $id = $cateName->getEntityId();
                     $pid = $cateName->getParent_id();
                     if ($pid == 1) {
                         $pid = 0;
                     }
-                    $cateHolder[] = array("cat_id"=>$id,"cat_name" => $name, "parent_cat_id" => $pid);
+                    if(!empty($name)){
+                     $cateHolder[] = array("cat_id"=>$id,"cat_name" => $name, "parent_cat_id" => $pid);
+                    }
                 }
 
                 $productName = $product->getName();
@@ -227,32 +229,16 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $event = $evnt->getEvent();
                 $action = $event->getControllerAction();
                 $product = $evnt->getProduct();
-                $stock_data = $product->getIs_in_stock();
-                $catCollection = $product->getCategoryCollection();
-                $categs = $catCollection->exportToArray();
-
-                $cateHolder = array();
-                foreach ($categs as $cat) {
-                    $cateName = Mage::getModel('catalog/category')->load($cat['entity_id']);
-                    $name = $cateName->getName();
-                    $id = $cateName->getEntityId();
-                    $pid = $cateName->getParent_id();
-                    if ($pid == 1) {
-                        $pid = 0;
-                    }
-                    $cateHolder[] = array("cat_id"=>$id,"cat_name" => $name, "parent_cat_id" => $pid);
-                }
-
+               
                 $actionData = array();
                 $actionData[0]['id'] = $product->getId();
                 $actionData[0]['name'] = $product->getName();
                 $actionData[0]['sku'] = $product->getSku();
                 $actionData[0]['price'] = $product->getPrice();
                 $actionData[0]['currency'] = Mage::app()->getStore()->getBaseCurrencyCode();
-                
                 $actionData[0]['image_url'] = $product->getImageUrl();
                 $actionData[0]['product_url'] = $product->getProductUrl();
-                $actionData[0]['categories'] = $cateHolder;
+              
                 
                  $actionDescription = array(
                     'activity_type' => 'review',
@@ -482,22 +468,6 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $event = $evnt->getEvent();
                 $eventname = $event->getName();
                 $product = $event->getProduct();
-
-                $catCollection = $product->getCategoryCollection();
-                $categs = $catCollection->exportToArray();
-                $cateHolder = array();
-
-               foreach ($categs as $cat) {
-                    $cateName = Mage::getModel('catalog/category')->load($cat['entity_id']);
-                    $name = $cateName->getName();
-                    $id = $cateName->getEntityId();
-                    $pid = $cateName->getParent_id();
-                    if ($pid == 1) {
-                        $pid = 0;
-                    }
-                    $cateHolder[] = array("cat_id"=>$id,"cat_name" => $name, "parent_cat_id" => $pid);
-                }
-                
                 $actionData = array();
                 $actionData[0]['productId'] = $product->getId();
                 $actionData[0]['productTitle'] = $product->getName();
@@ -508,10 +478,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $actionData[0]['image_url'] = $product->getImageUrl();
                 $actionData[0]['product_url'] = $product->getProductUrl();
 
-                $actionData[0]['categories'] = $cateHolder;
-                
                 $actionDescription = array(
-                    'activity_type' => 'wishlist',
+                    'activity_type' => 'add_to_wishlist',
                     'identifiers' => $this->getCustomerIdentity(),
                     'products' => $actionData
                 );
@@ -611,7 +579,9 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                             if ($pid == 1) {
                                 $pid = 0;
                             }
-                            $cateHolder[] = array_filter(array("cat_id"=>$id,"cat_name" => $name, "parent_cat_id" => $pid));
+                            if(!empty($name)){
+                             $cateHolder[] = array_filter(array("cat_id"=>$id,"cat_name" => $name, "parent_cat_id" => $pid));
+                            }
                         }
                     }catch(Exception $e){
                         

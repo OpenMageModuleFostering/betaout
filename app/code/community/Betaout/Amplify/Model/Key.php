@@ -1,6 +1,7 @@
 <?php
 
 require_once 'Amplify.php';
+require_once('app/Mage.php');
 
 class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
     /* @var $this Betaout_Amplify_Model_Key */
@@ -9,10 +10,11 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
     public $secret;
     public $projectId;
     public $verified;
-    public $host = 'getamplify.com';
+    public $host = 'y0v.in';
     public $amplify;
     public $allitems;
     public $checkstring;
+    public $email = '';
 
     const XML_PATH_KEY = 'betaout_amplify_options/settings/amplify_key';
     const XML_PATH_SECRET = 'betaout_amplify_options/settings/amplify_secret';
@@ -55,8 +57,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     $actionData[0]['productTitle'] = $product->getName();
                     $actionData[0]['sku'] = $product->getSku();
                     $actionData[0]['price'] = $product->getPrice();
-                    $actionData[0]['currency'] = Mage::app()->getStore()->getCurrentCurrencyCode();
-                    $actionData[0]['specialPrice'] = $product->getSpecial_price();
+                    $actionData[0]['currency'] = Mage::app()->getStore()->getBaseCurrencyCode();
+                    $actionData[0]['specialPrice'] = $product->getFinalPrice();
                     $actionData[0]['status'] = $product->getStatus();
                     $actionData[0]['productPictureUrl'] = $product->getImageUrl();
                     $actionData[0]['pageUrl'] = $product->getProductUrl();
@@ -109,8 +111,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $actionData[0]['productTitle'] = $product->getName();
                 $actionData[0]['sku'] = $product->getSku();
                 $actionData[0]['price'] = $product->getPrice();
-                $actionData[0]['currency'] = Mage::app()->getStore()->getCurrentCurrencyCode();
-                $actionData[0]['specialPrice'] = $product->getSpecial_price();
+                $actionData[0]['currency'] = Mage::app()->getStore()->getBaseCurrencyCode();
+                $actionData[0]['specialPrice'] = $product->getFinalPrice();
                 $actionData[0]['status'] = $product->getStatus();
                 $actionData[0]['productPictureUrl'] = $product->getImageUrl();
                 $actionData[0]['pageUrl'] = $product->getProductUrl();
@@ -119,7 +121,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $actionData[0]['color'] = false;
                 $actionData[0]['qty'] = false;
                 $actionData[0]['category'] = $categoryName;
-                $actionData[0]['discount'] = abs($product->getSpecialPrice() - $product->getFinalPrice());
+                $actionData[0]['discount'] = abs($product->getPrice() - $product->getFinalPrice());
                 $cart = Mage::getSingleton('checkout/cart');
                 $subTotalPrice = $cart->getQuote()->getGrandTotal();
                 $orderInfo["subtotalPrice"] = $subTotalPrice;
@@ -171,8 +173,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $actionData[0]['productTitle'] = $product->getName();
                 $actionData[0]['sku'] = $product->getSku();
                 $actionData[0]['price'] = $product->getPrice();
-                $actionData[0]['currency'] = Mage::app()->getStore()->getCurrentCurrencyCode();
-                $actionData[0]['specialPrice'] = $product->getSpecialPrice();
+                $actionData[0]['currency'] = Mage::app()->getStore()->getBaseCurrencyCode();
+                $actionData[0]['specialPrice'] = $product->getPrice();
                 $actionData[0]['status'] = $product->getStatus();
                 $actionData[0]['productPictureUrl'] = $product->getImageUrl();
                 $actionData[0]['pageUrl'] = $product->getProductUrl();
@@ -182,7 +184,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $actionData[0]['brandName'] = $product->getResource()->getAttribute('manufacturer') ? $product->getAttributeText('manufacturer') : false;
                 $actionData[0]['qty'] = (int) $product->getQty();
                 $actionData[0]['category'] = $categoryName;
-                $actionData[0]['discount'] = abs($product->getSpecialPrice() - $product->getFinalPrice());
+                $actionData[0]['discount'] = abs($product->getPrice() - $product->getFinalPrice());
                 $subTotalPrice = $cart->getQuote()->getGrandTotal();
                 $orderInfo["subtotalPrice"] = $subTotalPrice;
                 $orderInfo['abandonedCheckoutUrl'] = Mage::getUrl('checkout/cart');
@@ -192,13 +194,9 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     'action' => 'add_to_cart',
                     'products' => $actionData
                 );
-               
+
 //                $startTime = microtime(true);
                 $res = $this->amplify->customer_action($actionDescription);
-//          
-//                
-//                $endTime = microtime(true);
-//                echo "total Execution time ==" . ($endTime - $startTime);
             }
         } catch (Exception $ex) {
             
@@ -226,8 +224,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $actionData[0]['productTitle'] = $product->getName();
                 $actionData[0]['sku'] = $product->getSku();
                 $actionData[0]['price'] = $product->getPrice();
-                $actionData[0]['currency'] = Mage::app()->getStore()->getCurrentCurrencyCode();
-                $actionData[0]['specialPrice'] = $product->getSpecial_price();
+                $actionData[0]['currency'] = Mage::app()->getStore()->getBaseCurrencyCode();
+                $actionData[0]['specialPrice'] = $product->getFinalPrice();
                 $actionData[0]['status'] = $product->getStatus();
                 $actionData[0]['productPictureUrl'] = $product->getImageUrl();
                 $actionData[0]['pageUrl'] = $product->getProductUrl();
@@ -237,7 +235,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $actionData[0]['color'] = false;
                 $actionData[0]['qty'] = false;
                 $actionData[0]['category'] = $categoryName;
-                $actionData[0]['discount'] = abs($product->getSpecialPrice() - $product->getFinalPrice());
+                $actionData[0]['discount'] = abs($product->getPrice() - $product->getFinalPrice());
                 $actionDescription = array(
                     'action' => 'reviewed',
                     'email' => $this->getCustomerIdentity(),
@@ -284,9 +282,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
         try {
             if ($this->verified) {
 
-                $c = Mage::getSingleton('customer/session')->getCustomer();
-                $customer = Mage::getModel('customer/customer')->load($c->getId());
-                $custName = $customer->getFirstname();
+
                 try {
                     $this->amplify->identify($this->getCustomerIdentity(), $custName);
                 } catch (Exception $ex) {
@@ -296,42 +292,38 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     'unique_id' => $this->getCustomerIdentity()));
 
 
-
                 $c = Mage::getSingleton('customer/session')->getCustomer();
                 $customer = Mage::getModel('customer/customer')->load($c->getId());
-
+                $person = array();
+                $person['WebId'] = $customer->getWebsiteId();
+                $person['storeId'] = $customer->getStoreId();
                 $email = $customer->getEmail();
-                $customer = $customer->getAddresses();
+                $custome = $customer->getAddresses();
 
-                if (is_array($customer)) {
-                    $ekey = array_keys($customer);
-                    $customer = $customer[$ekey[0]];
+                if (is_array($custome)) {
+                    foreach ($custome as $customer) {
+
+                        if (is_object($customer)) {
+                            $person['firstname'] = $customer->getFirstname();
+                            $person['lastname'] = $customer->getLastname();
+
+                            $person['postcode'] = $customer->getPostcode();
+                            $person['telephone'] = $customer->getTelephone();
+                            $person['fax'] = $customer->getfax();
+                            $person['customerId'] = $customer->getCustomerId();
+                            $person['company'] = $customer->getCompany();
+                            $person['region'] = $customer->getRegion();
+                            $person['street'] = $customer->getStreetFull();
+                        }
+                    }
                 }
-                if (is_object($customer)) {
-                    $person['firstname'] = $customer->getFirstname();
-                    $person['lastname'] = $customer->getLastname();
-                    $person['city'] = $customer->getCity();
-                    $person['postcode'] = $customer->getPostcode();
-                    $person['telephone'] = $customer->getTelephone();
-                    $person['fax'] = $customer->getfax();
-                    $person['regionId'] = $customer->getRegionId();
-                    $person['customerId'] = $customer->getCustomerId();
-                    $person['company'] = $customer->getCompany();
-                    $person['region'] = $customer->getRegion();
-                    $person['street'] = $customer->getStreetFull();
-                    $person['country'] = $customer->getCountry_id();
-                    $person = array_filter($person);
-                    $res = $this->amplify->update($email, $person);
-                }
-//                $customer = Mage::getModel('customer/customer')->load($c->getId()); //insert cust ID
-//#create customer address array
-//                $customerAddress = array();
-//#loop to create the array
-//                foreach ($customer->getAddresses() as $address) {
-//                    $customerAddress = $address->toArray();
-//                }
-//#displaying the array
-//                echo '<pre/>';
+                $person = array_filter($person);
+                $res = $this->amplify->add($email, $person, 1);
+//$customerAddressId = Mage::getSingleton('customer/session')->getCustomer()->getDefaultShipping();
+//    if ($customerAddressId){
+//        $address = Mage::getModel('customer/address')->load($customerAddressId);
+//    }
+////               
             }
         } catch (Exception $ex) {
             
@@ -364,14 +356,11 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
 
                 $c = Mage::getSingleton('customer/session')->getCustomer();
                 $customer = Mage::getModel('customer/customer')->load($c->getId());
-                $person = array();
-//                $person = $this->getCustomereventInfo($customer);
-//                $this->eventPerson($person);
+
 
                 return $customer->getEmail();
             } else {
-
-                return '';
+                return Mage::getModel('core/cookie')->get('amplify_email');
             }
         } catch (Exception $ex) {
             
@@ -420,29 +409,29 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     'order_total' => $revenue,
                     'unique_id' => $this->getCustomerIdentity()));
 
-
-                $c = Mage::getSingleton('customer/session')->getCustomer();
-                $customer = Mage::getModel('customer/customer')->load($c->getId());
-
-                $email = $customer->getEmail();
-                $customer = $customer->getAddresses();
-
-                if (is_array($customer)) {
-                    $ekey = array_keys($customer);
-                    $customer = $customer[$ekey[0]];
-                }
-                $person['firstname'] = $customer->getFirstname();
-                $person['lastname'] = $customer->getLastname();
-                $person['city'] = $customer->getCity();
-                $person['postcode'] = $customer->getPostcode();
-                $person['telephone'] = $customer->getTelephone();
-                $person['fax'] = $customer->getfax();
-                $person['regionId'] = $customer->getRegionId();
-                $street = $customer->getStreet();
-                $person['street'] = $street[0];
-                $person['customerId'] = $customer->getCustomerId();
-                $person = array_filter($person);
-                $res = $this->amplify->update($email, $person);
+//
+//                $c = Mage::getSingleton('customer/session')->getCustomer();
+//                $customer = Mage::getModel('customer/customer')->load($c->getId());
+//
+//                $email = $customer->getEmail();
+//                $customer = $customer->getAddresses();
+//
+//                if (is_array($customer)) {
+//                    $ekey = array_keys($customer);
+//                    $customer = $customer[$ekey[0]];
+//                }
+//                $person['firstname'] = $customer->getFirstname();
+//                $person['lastname'] = $customer->getLastname();
+//
+//                $person['postcode'] = $customer->getPostcode();
+//                $person['telephone'] = $customer->getTelephone();
+//                $person['fax'] = $customer->getfax();
+//                $person['regionId'] = $customer->getRegionId();
+//                $street = $customer->getStreet();
+//                $person['street'] = $street[0];
+//                $person['customerId'] = $customer->getCustomerId();
+//                $person = array_filter($person);
+//                $res = $this->amplify->update($email, $person);
             }
         } catch (Exception $ex) {
             
@@ -462,7 +451,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
 //                }
 //                $person['firstname'] = $customer->getFirstname();
 //                $person['lastname'] = $customer->getLastname();
-//                $person['city'] = $customer->getCity();
+//             
 //                $person['postcode'] = $customer->getPostcode();
 //                $person['telephone'] = $customer->getTelephone();
 //                $person['fax'] = $customer->getfax();
@@ -513,7 +502,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
 
                     $person = array();
                     $person = $this->getCustomereventInfo($customer);
-                    $this->eventPerson($person);
+//                    $this->eventPerson($person);
                 }
             }
         } catch (Exception $ex) {
@@ -533,9 +522,9 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
 
                 $person = array();
                 $person = $this->getCustomereventInfo($customer);
-//            $this->amplify->event($customer_email, array("register" => false));
+                $this->amplify->event($customer_email, array("create_account" => false));
                 $this->amplify->identify($person['email'], $person['first_name']);
-                $this->eventPerson($person);
+//                $this->eventPerson($person);
             }
         } catch (Exception $ex) {
             
@@ -552,7 +541,6 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $oCoupon = Mage::getModel('salesrule/coupon')->load($coupon_code, 'code');
                 $oRule = Mage::getModel('salesrule/rule')->load($oCoupon->getRuleId());
                 $coupon_code = $oRule->getCoupon_code();
-
 
                 if (isset($coupon_code) && !empty($coupon_code)) {
                     $this->event('coupon_success', array('code' => $coupon_code));
@@ -603,8 +591,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
 //        $custid = Mage::getModel('betaout_amplify/key');
 //        $identity = $custid->getCustomerIdentity();
                 if ($this->verified) {
-                    $this->amplify->identify($person['email'], $person['first_name']);
-                    $this->amplify->add($person['email'], $params);
+//                    $this->amplify->identify($person['email'], $person['first_name']);
+//                    $this->amplify->add($person['email'], $params);
                 }
             }
         } catch (Exception $ex) {
@@ -678,8 +666,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $actionData[0]['productTitle'] = $product->getName();
                 $actionData[0]['sku'] = $product->getSku();
                 $actionData[0]['price'] = $product->getPrice();
-                $actionData[0]['currency'] = Mage::app()->getStore()->getCurrentCurrencyCode();
-                $actionData[0]['specialPrice'] = $product->getSpecial_price();
+                $actionData[0]['currency'] = Mage::app()->getStore()->getBaseCurrencyCode();
+                $actionData[0]['specialPrice'] = $product->getFinalPrice();
                 $actionData[0]['status'] = $product->getStatus();
                 $actionData[0]['productPictureUrl'] = $product->getImageUrl();
                 $actionData[0]['pageUrl'] = $product->getProductUrl();
@@ -690,7 +678,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $actionData[0]['color'] = false;
                 $actionData[0]['qty'] = false;
                 $actionData[0]['category'] = $categoryName;
-                $actionData[0]['discount'] = abs($product->getSpecialPrice() - $product->getFinalPrice());
+                $actionData[0]['discount'] = abs($product->getPrice() - $product->getFinalPrice());
                 $actionDescription = array(
                     'action' => 'wishlist',
                     'email' => $this->getCustomerIdentity(),
@@ -710,52 +698,37 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
     public function getAmplifyOrderSuccessPageView(Varien_Event_Observer $evnt) {
         try {
             if ($this->verified) {
-
                 $c = Mage::getSingleton('customer/session')->getCustomer();
-                $customer = Mage::getModel('customer/customer')->load($c->getId());
+                if (is_object($c)) {
+                    $customer = Mage::getModel('customer/customer')->load($c->getId());
+                    if (is_object($c)) {
+                        $email = $customer->getEmail();
+                        $customer = $customer->getAddresses();
 
-                $email = $customer->getEmail();
-                $customer = $customer->getAddresses();
-
-                if (is_array($customer)) {
-                    $ekey = array_keys($customer);
-                    $customer = $customer[$ekey[0]];
+                        if (is_array($customer)) {
+                            $ekey = array_keys($customer);
+                            $customer = $customer[$ekey[0]];
+                        }
+                        if (is_object($customer)) {
+                            $person['firstname'] = $customer->getFirstname();
+                            $person['lastname'] = $customer->getLastname();
+                            $person['postcode'] = $customer->getPostcode();
+                            $person['telephone'] = $customer->getTelephone();
+                            $person['fax'] = $customer->getfax();
+                            $person['regionId'] = $customer->getRegionId();
+                            $street = $customer->getStreet();
+                            $person['street'] = $street[0];
+                            $person['customerId'] = $customer->getCustomerId();
+                            $res = $this->amplify->update($email, $person);
+                        }
+                    }
                 }
-                $person['firstname'] = $customer->getFirstname();
-                $person['lastname'] = $customer->getLastname();
-                $person['city'] = $customer->getCity();
-                $person['postcode'] = $customer->getPostcode();
-                $person['telephone'] = $customer->getTelephone();
-                $person['fax'] = $customer->getfax();
-                $person['regionId'] = $customer->getRegionId();
-                $street = $customer->getStreet();
-                $person['street'] = $street[0];
-                $person['customerId'] = $customer->getCustomerId();
-                $res = $this->amplify->update($email, $person);
 
 
-
-
-                $orderId = 0;
-                $orderIds = $evnt->getEvent()->getOrderIds();
-                $orderId = $orderIds[0];
-                if ($orderId)
-                    $orderId = Mage::getSingleton('checkout/session')->getLastOrderId();
-                if ($orderId) {
-                    $order = Mage::getModel('sales/order')->load($orderId);
-                    $order_id = $order->getIncrementId();
-                }
-                $orderDeatails = array(
-                    'orderId' => $order_id,
-//                'product_name' => $productName,
-//                'sku' => $sku,
-                );
-//                $eventArr = array(
-//                    'purchase_complete' => $orderDeatails
-//                );
-//                $this->amplify->event($this->getCustomerIdentity(), $eventArr);
-                $order = Mage::getModel('sales/order')->load($orderId);
-                $items = $order->getAllItems();
+                $order_id = Mage::getSingleton('checkout/session')->getLastRealOrderId();
+                $order = Mage::getModel('sales/order')->loadByIncrementId($order_id);
+//                $items = $order->getAllItems();
+                $items = $order->getAllVisibleItems();
                 $itemcount = count($items);
                 $name = array();
                 $unitPrice = array();
@@ -781,8 +754,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     $actionData[$i]['productTitle'] = $product->getName();
                     $actionData[$i]['sku'] = $product->getSku();
                     $actionData[$i]['price'] = $product->getPrice();
-                    $actionData[$i]['currency'] = Mage::app()->getStore()->getCurrentCurrencyCode();
-                    $actionData[$i]['specialPrice'] = $product->getSpecial_price();
+                    $actionData[$i]['currency'] = Mage::app()->getStore()->getBaseCurrencyCode();
+                    $actionData[$i]['specialPrice'] = $product->getFinalPrice();
                     $actionData[$i]['status'] = $product->getStatus();
                     $actionData[$i]['productPictureUrl'] = $product->getImageUrl();
                     $actionData[$i]['pageUrl'] = $product->getProductUrl();
@@ -796,21 +769,28 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     $actionData[$i]['orderId'] = $order_id;
 //                    $actionData[$i]['couponCode'] = Mage::getSingleton('checkout/session')->getQuote()->getCouponCode() ;
                     $actionData[$i]['discount'] = $item->getDiscountAmount();
+//                    $actionData[$i]['discount'] = $item->getBaseDiscountAmount();
                     $i++;
                 }
+
                 $cart = Mage::getSingleton('checkout/cart');
                 $TotalPrice = $order->getGrandTotal();
                 $totalShippingPrice = $order->getShippingAmount();
                 $subTotalPrice = $TotalPrice - $totalShippingPrice;
+                $subTotalPrice = $order->getSubtotal();
                 $orderInfo["subtotalPrice"] = $subTotalPrice;
                 $orderInfo["totalPrice"] = $TotalPrice;
                 $orderInfo["totalShippingPrice"] = $totalShippingPrice;
                 $orderInfo['orderId'] = $order_id;
                 $orderInfo['promocode'] = $order->getCouponCode();
                 $orderInfo['totalDiscount'] = abs($order->getDiscountAmount());
+                $orderInfo['DiscountPer'] = abs($order->getDiscountPercent());
+                $orderInfo['DiscountDesc'] = $order->getDiscountDescription();
+                $orderInfo['currency'] = $order->getOrderCurrencyCode();
                 $orderInfo['financialStatus'] = 'paid';
                 $orderInfo['abandonedCheckoutUrl'] = Mage::getUrl('checkout/cart');
                 $orderInfo['totalTaxes'] = $order->getShippingTaxAmount();
+
 //                $orderInfo['totalQty'] = $order->totalQty();
                 $actionDescription = array(
                     'action' => 'purchased',
@@ -819,17 +799,6 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     'products' => $actionData
                 );
                 $res = $this->amplify->customer_action($actionDescription);
-//              Mage::getSingleton('customer/session')->getCustomer()->getDefaultBillingAddress();
-//                $_shippingAddress = $order->getShippingAddress();
-//                $shipppingDetails['shippingCity'] = $_shippingAddress->getCity();
-//                $shipppingDetails['shippingPostcode'] = $_shippingAddress->getPostcode();
-//                $shipppingDetails['shippingTelephone'] = $_shippingAddress->getTelephone();
-//                $shipppingDetails['shippingCompany'] = $_shippingAddress->getCompany();
-//                $shipppingDetails['shippingRegion'] = $_shippingAddress->getRegion();
-////                $shipppingDetails['street'] = $_shippingAddress->getStreetFull();
-//                $shipppingDetails['shippingCountry'] = $_shippingAddress->getCountry_id();
-////                $shipppingDetails['customerId'] = $order->getCustomerId();
-//                $res = $this->amplify->update($email, $shipppingDetails);
             }
         } catch (Exception $ex) {
             
@@ -845,23 +814,15 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $visitor_data = $mageObj->visitor_data;
                 $getquote = $evnt->getQuote();
                 $data = array_filter($getquote->getData());
-                $OriginalPathInfo = Mage::app()->getRequest()->getOriginalPathInfo();
-                $requestUri = Mage::app()->getRequest()->getRequestUri();
-                $data['OriginalPathInfo'] = $OriginalPathInfo;
-                $data['RequestUri'] = $requestUri;
-                if (isset($data['customer_email'])) {
-                    $eventArr = array(
-                        'customerEmail' => $data['customer_email'],
-                        'customerFirstname' => $data['customer_firstname'],
-                        'customerLastname' => $data['customer_lastname'],
-//                    'continent' => $data['continent'],
-                        'OriginalPathInfo' => $OriginalPathInfo,
-                        'RequestUri' => $requestUri
-                    );
-//            $this->amplify->event($this->getCustomerIdentity(), $eventArr);
-                    $this->amplify->identify($data['customer_email'], $data['customer_firstname']);
-                    $this->amplify->add($data['customer_email'], $eventArr);
-                }
+                Mage::getModel('core/cookie')->set('amplify_email', $data['customer_email']);
+
+
+                $person = array();
+                $person['WebId'] = Mage::app()->getWebsite()->getId();
+                $person['storeId'] = Mage::app()->getStore()->getId();
+                $person = array_filter($person);
+                $this->amplify->identify($data['customer_email'], $data['customer_firstname']);
+                $res = $this->amplify->add($data['customer_email'], $person, 1);
             }
         } catch (Exception $ex) {
             
@@ -892,8 +853,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     'productTitle' => $product->getName(),
                     'sku' => $product->getsku(),
                     'price' => $product->getPrice(),
-                    'currency' => Mage::app()->getStore()->getCurrentCurrencyCode(),
-                    'specialPrice' => $product->getSpecialPrice(),
+                    'currency' => Mage::app()->getStore()->getBaseCurrencyCode(),
+                    'specialPrice' => $product->getPrice(),
                     'status' => $product->getStatus(),
 //            'description' => $product->getDescription(),
                     'productPictureUrl' => $product->getImage() ? Mage::getModel('catalog/product_media_config')->getMediaUrl($product->getImage()) : '',
@@ -954,6 +915,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
     public function getAmplifyCatalogProductView(Varien_Event_Observer $evnt) {
         try {
             if ($this->verified) {
+
                 $product = $evnt->getEvent()->getProduct();
                 $catCollection = $product->getCategoryCollection();
                 $categs = $catCollection->exportToArray();
@@ -971,8 +933,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $actionData[0]['productTitle'] = $product->getName();
                 $actionData[0]['sku'] = $product->getSku();
                 $actionData[0]['price'] = $product->getPrice();
-                $actionData[0]['currency'] = Mage::app()->getStore()->getCurrentCurrencyCode();
-                $actionData[0]['specialPrice'] = $product->getSpecial_price();
+                $actionData[0]['currency'] = Mage::app()->getStore()->getBaseCurrencyCode();
+                $actionData[0]['specialPrice'] = $product->getFinalPrice();
                 $actionData[0]['status'] = $product->getStatus();
                 $actionData[0]['productPictureUrl'] = $product->getImageUrl();
                 $actionData[0]['pageUrl'] = $product->getProductUrl();
@@ -983,7 +945,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $actionData[0]['color'] = false;
                 $actionData[0]['qty'] = false;
                 $actionData[0]['category'] = $categoryName;
-                $actionData[0]['discount'] = abs($product->getSpecialPrice() - $product->getFinalPrice());
+                $actionData[0]['discount'] = abs($product->getPrice() - $product->getFinalPrice());
                 $actionDescription = array(
                     'action' => 'viewed',
                     "email" => $this->getCustomerIdentity(),
@@ -1014,8 +976,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
 //                    'productTitle' => $product->getName(),
 //                    'sku' => $product->getsku(),
 //                    'price' => $product->getPrice(),
-//                    'currency' => Mage::app()->getStore()->getCurrentCurrencyCode(),
-//                    'specialPrice' => $product->getSpecial_price(),
+//                    'currency' => Mage::app()->getStore()->getBaseCurrencyCode(),
+//                    'specialPrice' => $product->getFinalPrice(),
 //                    'status' => $product->getStatus(),
 ////                    'description' => $product->getDescription(),
 //                    'productPictureUrl' => $product->getImage(),
@@ -1042,8 +1004,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $actionData[0]['productTitle'] = $product->getName();
                 $actionData[0]['sku'] = $product->getSku();
                 $actionData[0]['price'] = $product->getPrice();
-                $actionData[0]['currency'] = Mage::app()->getStore()->getCurrentCurrencyCode();
-                $actionData[0]['specialPrice'] = $product->getSpecial_price();
+                $actionData[0]['currency'] = Mage::app()->getStore()->getBaseCurrencyCode();
+                $actionData[0]['specialPrice'] = $product->getFinalPrice();
                 $actionData[0]['status'] = $product->getStatus();
                 $actionData[0]['productPictureUrl'] = $product->getImageUrl();
                 $actionData[0]['pageUrl'] = $product->getProductUrl();
@@ -1054,7 +1016,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $actionData[0]['color'] = false;
                 $actionData[0]['qty'] = false;
                 $actionData[0]['category'] = $categoryName;
-                $actionData[0]['discount'] = abs($product->getSpecialPrice() - $product->getFinalPrice());
+                $actionData[0]['discount'] = abs($product->getPrice() - $product->getFinalPrice());
                 $actionDescription = array(
                     'action' => 'shared',
                     'email' => $this->getCustomerIdentity(),
@@ -1077,8 +1039,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
 //                'productTitle' =>$product->getName(),
 //                'sku' => $product->getsku(),
 //                'price' => $product->getPrice(),
-//                'currency' => Mage::app()->getStore()->getCurrentCurrencyCode(),
-//                'specialPrice' => $product->getSpecial_price(),
+//                'currency' => Mage::app()->getStore()->getBaseCurrencyCode(),
+//                'specialPrice' => $product->getFinalPrice(),
 //                'status' => $product->getStatus(),
 //                'description' => $product->getDescription(),
 //                'productPictureUrl' => $product->getImage(),
@@ -1093,16 +1055,14 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
 //    }
 
     public function getAmplifyCustomerAdressSaveAfter($evnt) {
+        return true;
         try {
 
             if ($this->verified) {
                 $data = $evnt->getCustomer_address()->getData();
                 $propetyArray = array(
                     'lastName' => $data['lastname'],
-                    "city" => $data['city'],
-                    "countryCode" => $data['country_id'],
                     "telephone" => $data['telephone'],
-//                "countryCode" => $data['country_id'],
                     "company" => $data['company'],
                     "region" => $data['region'],
                     "street" => $data['street']
@@ -1131,8 +1091,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     $actionData[0]['productTitle'] = $product->getName();
                     $actionData[0]['sku'] = $product->getSku();
                     $actionData[0]['price'] = $product->getPrice();
-                    $actionData[0]['currency'] = Mage::app()->getStore()->getCurrentCurrencyCode();
-                    $actionData[0]['specialPrice'] = $product->getSpecial_price();
+                    $actionData[0]['currency'] = Mage::app()->getStore()->getBaseCurrencyCode();
+                    $actionData[0]['specialPrice'] = $product->getFinalPrice();
                     $actionData[0]['status'] = $product->getStatus();
 //                $actionData[0]['productPictureUrl'] = $product->getImageUrl();
 //                $actionData[$i]['pageUrl'] = $product->getProductUrl();
@@ -1176,13 +1136,13 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $actionData[$i]['productTitle'] = $product->getName();
                 $actionData[$i]['sku'] = $product->getSku();
                 $actionData[$i]['price'] = $product->getPrice();
-                $actionData[$i]['currency'] = Mage::app()->getStore()->getCurrentCurrencyCode();
-                $actionData[$i]['specialPrice'] = $product->getSpecialPrice();
+                $actionData[$i]['currency'] = Mage::app()->getStore()->getBaseCurrencyCode();
+                $actionData[$i]['specialPrice'] = $product->getPrice();
                 $actionData[$i]['status'] = $product->getStatus();
                 $actionData[$i]['productPictureUrl'] = $product->getImageUrl();
                 $actionData[$i]['pageUrl'] = $product->getProductUrl();
                 $actionData[$i]['qty'] = $pr->getQty();
-                $actionData[$i]['discount'] = ($product->getSpecialPrice() - $product->getFinalPrice());
+                $actionData[$i]['discount'] = ($product->getPrice() - $product->getFinalPrice());
                 $actionDescription = array(
                     'action' => 'update_cart',
                     'email' => $this->getCustomerIdentity(),

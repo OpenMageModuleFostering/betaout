@@ -34,6 +34,7 @@
 /**
  * amplify.to API
  */
+require_once('app/Mage.php');
 class Amplify {
     /*
      * the amplify ApiKey
@@ -96,6 +97,7 @@ class Amplify {
      * ott refer one time token that use to handshake
      */
     protected $ott;
+    public $ottt;
 
     /**
      * Whether we are in debug mode. This is set by the constructor
@@ -397,7 +399,7 @@ class Amplify {
      * @param string $debug Optional debug flag
      * @return void
      * */
-    public function __construct($apiKey, $apiSecret, $projectId, $debug = false) {
+    public function __construct($apiKey, $apiSecret, $projectId, $debug = true) {
         $this->basicSetUp();
         $this->setApiKey($apiKey);
         $this->setApiSecret($apiSecret);
@@ -423,11 +425,9 @@ class Amplify {
     }
 
     public static $CURL_OPTS = array(
-       CURLOPT_CONNECTTIMEOUT_MS=>2000,
-        
+        CURLOPT_CONNECTTIMEOUT_MS => 2000,
         CURLOPT_RETURNTRANSFER => true,
-     
-        CURLOPT_TIMEOUT_MS=>2000,
+        CURLOPT_TIMEOUT_MS => 2000,
         CURLOPT_USERAGENT => 'amplify-php-1.0',
     );
 
@@ -505,9 +505,8 @@ class Amplify {
     }
 
     public function setOtt() {
-        if (isset($_COOKIE['amplifysid']) && !empty($_COOKIE['amplifysid'])) {
-            $this->ott = $_COOKIE['amplifysid'];
-        }
+        $this->ott = Mage::getModel('core/cookie')->get('amplifyUid');
+//        print "\ottt = " . $this->ott. "\n";
     }
 
     public function getOtt() {
@@ -559,7 +558,7 @@ class Amplify {
                 $requestUrl.="?" . $this->getParams();
                 $this->setRequestUrl($requestUrl);
                 $this->signString();
-                $requestUrl = $this->getRequestUrl() . "&hash=" . $this->getHash();
+                $requestUrl = $this->getRequestUrl() . "&hash=" . $this->getHash() . "&ip=" . Mage::helper('core/http')->getRemoteAddr(true);
                 return $this->makeRequest($requestUrl);
             } catch (Exception $ex) {
                 $this->showError[] = $ex->getCode() . ":" . $ex->getMessage();
@@ -609,8 +608,8 @@ class Amplify {
         } else {
             $options[CURLOPT_HTTPHEADER] = array('Expect:');
         }
-      
-        
+
+
         curl_setopt_array($ch, $options);
         $result = curl_exec($ch);
 
@@ -643,15 +642,20 @@ class Amplify {
 
     public function identify($email = '', $name = '', $url = '', $referer = '') {
 
+
+// print cookie value
+        $this->ott = Mage::getModel('core/cookie')->get('amplifyUid');
         $argumentsArray = array('email' => $email, 'name' => $name, 'url' => $url, 'referer' => $referer);
         $response = $this->http_call('identify', $argumentsArray);
         if ($response['responseCode'] == '200') {
-            if (!isset($_COOKIE['amplifysid']))
-                setcookie('amplifysid', $response['amplifySession'], time() + 604800, '/');
-            if (!isset($_COOKIE['lifeCycleId']))
-                setcookie('lifeCycleId', $response['amplifySession'], time() + 604800, '/');
-            if (!isset($_COOKIE['userKnown']))
-                setcookie('userKnown', $response['amplifySession'], time() + 604800, '/');
+
+            Mage::getModel('core/cookie')->set('amplifyUid', $response['amplifySession'], time() + 604800, '/');
+//            if (!isset($_COOKIE['amplifysid']))
+//                setcookie('amplifysid', $response['amplifySession'], time() + 604800, '/');
+//            if (!isset($_COOKIE['lifeCycleId']))
+//                setcookie('lifeCycleId', $response['lifecycleId'], time() + 604800, '/');
+//            if (!isset($_COOKIE['userKnown']))
+//                setcookie('userKnown', $response['userKnown'], time() + 604800, '/');
         }
 
         return $response;
@@ -688,6 +692,9 @@ class Amplify {
 //    $sku, $action, $size = false, $color = false, $amount = false
     public function customer_action($actionDescription) {
         $argumentsArray = $actionDescription;
+        $argumentsArray['url'] = $this->getCurrentUrl();
+        $argumentsArray['ref'] = isset($_COOKIE['_ampREF']) ? $_COOKIE['_ampREF'] : "";
+
         return $this->http_call('customer_action', $argumentsArray);
     }
 
@@ -713,8 +720,11 @@ class Amplify {
      * $amplify->add('sandeep@socialaxishq.com',array('total_comments'=>'5','total_shares'=>'4'));
      */
 
-    public function add($email, $propetyArray) {
+    public function add($email, $propetyArray, $text = 0) {
         $argumentsArray = array('email' => $email, 'properties' => $propetyArray);
+        if ($text)
+            $argumentsArray = array('email' => $email, 'properties' => $propetyArray, 'property_force_data_type' => 'text');// if string 
+
         return $this->http_call('add', $argumentsArray);
     }
 
@@ -774,6 +784,18 @@ class Amplify {
     public function describe() {
 //        if ($this->debug)
         return $this->showError;
+    }
+
+    public function getCurrentUrl() {
+        $currentURL = (@$_SERVER["HTTPS"] == "on") ? "https://" : "http://";
+        $currentURL .= $_SERVER["SERVER_NAME"];
+
+        if ($_SERVER["SERVER_PORT"] != "80" && $_SERVER["SERVER_PORT"] != "443") {
+            $currentURL .= ":" . $_SERVER["SERVER_PORT"];
+        }
+
+        $currentURL .= $_SERVER["REQUEST_URI"];
+        return $currentURL;
     }
 
 }

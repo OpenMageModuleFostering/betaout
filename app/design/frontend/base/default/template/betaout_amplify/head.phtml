@@ -1,12 +1,16 @@
 <?php
 //$startTime = microtime(true);
 try {
+    $model = Mage::getModel('betaout_amplify/key');
     if (Mage::getSingleton('customer/session')->isLoggedIn()) {
 
         $c = Mage::getSingleton('customer/session')->getCustomer();
         $customer = Mage::getModel('customer/customer')->load($c->getId());
 
         $identity = $customer->getEmail();
+    }
+    else {
+        $identity= Mage::getModel('core/cookie')->get('amplify_email');
     }
     if (Mage::getStoreConfig('betaout_amplify_options/settings/amplify_verified')) {
         ?>
@@ -24,7 +28,7 @@ try {
                 _sc.src = u;
                 f.parentNode.insertBefore(_sc, f);
                 __d = false;
-                _sc.onload = _sc.onreadystatechange = function() {
+                _sc.onload = _sc.onreadystatechange = function () {
                     if (!__d && (!this.readyState || this.readyState === "loaded" || this.readyState === "complete")) {
                         __d = true;
                         Amplify = new AmplifyEngine();
@@ -32,7 +36,8 @@ try {
                 };
             }
             _amplify("//d3oa6jk77hlbow.cloudfront.net/tejas.min.js");
-            window.amplifyInit = function() {
+            //            _amplify("//1.amplify.to/tejasv2/testerNew.js?v=47");
+            window.amplifyInit = function () {
 
                 Amplify.identify({
                     email: '<?php echo $identity; ?>',
@@ -46,7 +51,7 @@ try {
         <?php
     };
 } catch (Exception $ex) {
-
+    
 }
 //$endTime = microtime(true);
 //echo "total Execution time ==" . ($endTime - $startTime);

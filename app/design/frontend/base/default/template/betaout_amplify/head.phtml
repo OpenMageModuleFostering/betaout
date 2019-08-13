@@ -1,13 +1,14 @@
 <?php
 //$startTime = microtime(true);
 try {
-//    $model = Mage::getModel('betaout_amplify/key');
+   $identity="";
+   $customer_id="";
     if (Mage::getSingleton('customer/session')->isLoggedIn()) {
 
         $c = Mage::getSingleton('customer/session')->getCustomer();
         $customer = Mage::getModel('customer/customer')->load($c->getId());
-
         $identity = $customer->getEmail();
+        $customer_id = $customer->getId();
     }
     else {
         $identity= Mage::getModel('core/cookie')->get('amplify_email');
@@ -15,29 +16,25 @@ try {
    
         ?>
         <script type="text/javascript">
-            var Amplify = "";
-            _bOutCW =<?php echo Mage::getStoreConfig("betaout_amplify_options/settings/AmplifyConnect_Widget"); ?>;
-            _bOutST = "<?php echo Mage::getStoreConfig("betaout_amplify_options/settings/shareTracking"); ?>";
-            urlTracking = "<?php echo Mage::getStoreConfig("betaout_amplify_options/settings/urlTracking"); ?>";
-            _bOutAKEY = '<?php echo Mage::getStoreConfig("betaout_amplify_options/settings/amplify_key"); ?>';
-            _bOutPID = '<?php echo Mage::getStoreConfig("betaout_amplify_options/settings/amplify_projectId"); ?>';
-            
-                var _bOut = _bOut || [];
-                function _bOutS(u) {
-                var d = document, f = d.getElementsByTagName("script")[0], _sc = d.createElement("script");
-                _sc.type = "text/javascript";
-                _sc.async = true;
-                _sc.src = u;
-                f.parentNode.insertBefore(_sc, f);
+            var _bout = _bout || [];
+            var _boutAKEY = '<?php echo Mage::getStoreConfig("betaout_amplify_options/settings/amplify_key"); ?>';
+            var _boutPID = '<?php echo Mage::getStoreConfig("betaout_amplify_options/settings/amplify_projectId"); ?>';
+               
+           
+            var d = document, f = d.getElementsByTagName("script")[0], _sc = d.createElement("script");
+            _sc.type = "text/javascript";
+            _sc.async = true;
+            _sc.src = "//d22vyp49cxb9py.cloudfront.net/jal-v2.min.js";
+            f.parentNode.insertBefore(_sc, f);
+            _bout.push(["identify", {
+                    "customer_id": "<?php echo $customer_id;?>",
+                    "email": "<?php echo $identity; ?>",
+                    "phone": "",
+                    "gcm_id": "",
+                    "apn_id": ""
                 }
-                _bOutS("//d22vyp49cxb9py.cloudfront.net/jal-v1.min.js");
-
-                _bOut.push(["identify", {
-                        "email": "<?php echo $identity; ?>",
-                        "name": ""
-                 }]);
-
-        </script>
+            ]);
+         </script>
 
         <?php
  

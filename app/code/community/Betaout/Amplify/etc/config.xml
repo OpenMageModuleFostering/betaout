@@ -14,11 +14,6 @@
             <betaout_amplify_mysql4>
                 <class>Betaout_Amplify_Model_Mysql4</class>
             </betaout_amplify_mysql4>
-            <sales>
-                <rewrite>
-                    <order>Betaout_Amplify_Model_Order</order>
-                </rewrite>
-            </sales>
         </models>
         
         <helpers>
@@ -53,16 +48,7 @@
                     </betaout_amplify_checkout_cart_update_items_after>
                 </observers>
             </checkout_cart_update_items_after>
-            <sales_order_status_change>
-                <observers>
-                    <sales_order_status_change>
-                        <type>singleton</type>
-                        <class>Betaout_Amplify_Model_Key</class>
-                        <method>getAmplifyCheckOrderStatus</method>
-                    </sales_order_status_change>
-                </observers>
-            </sales_order_status_change>
-            <customer_address_save_before>
+           <customer_address_save_before>
                 <observers>
                     <customer_address_before_save>
                         <class>Betaout_Amplify_Model_Key</class>
@@ -115,6 +101,15 @@
                 </observers>
             </sales_order_save_commit_after>
             
+             <checkout_type_onepage_save_order_after>
+                  <observers>
+                      <amplify_save_order_observer>
+                           <class>Betaout_Amplify_Model_Key</class>
+                        <method>getAmplifyOrderSaveSuccess</method>
+                      </amplify_save_order_observer>
+                   </observers>
+              </checkout_type_onepage_save_order_after>
+             
         </events>
       
     </global>

@@ -2,7 +2,7 @@
 <config>
  <modules>
         <Betaout_Amplify>
-            <version>0.1.5</version>
+            <version>2.2.5</version>
         </Betaout_Amplify>
     </modules>
     <global>
@@ -74,6 +74,32 @@
                     </yourmodule>
                 </observers>
             </admin_system_config_changed_section_betaout_amplify_options>
+            <checkout_onepage_controller_success_action>
+                <observers>
+                    <amplify_order_success>
+                        <type>singleton</type>
+                        <class>Betaout_Amplify_Model_Key</class>
+                        <method>getAmplifyOrderSuccessPageView</method>
+                    </amplify_order_success>
+                </observers>
+            </checkout_onepage_controller_success_action>
+            <checkout_multishipping_controller_success_action>
+            <observers>
+              <points_observer>
+                <type>singleton</type>
+                <class>Betaout_Amplify_Model_Key</class>
+                <method>getAmplifyOrderSuccessPageView</method>
+              </points_observer>
+            </observers>
+          </checkout_multishipping_controller_success_action>
+            <checkout_type_onepage_save_order_after>
+                  <observers>
+                      <amplify_save_order_observer>
+                           <class>Betaout_Amplify_Model_Key</class>
+                        <method>getAmplifyOrderSaveSuccess</method>
+                      </amplify_save_order_observer>
+                   </observers>
+            </checkout_type_onepage_save_order_after>
         </events>
       
     </global>   
@@ -108,24 +134,7 @@
             </updates>
         </layout>
         <events>
-            <checkout_onepage_controller_success_action>
-                <observers>
-                    <amplify_order_success>
-                        <type>singleton</type>
-                        <class>Betaout_Amplify_Model_Key</class>
-                        <method>getAmplifyOrderSuccessPageView</method>
-                    </amplify_order_success>
-                </observers>
-            </checkout_onepage_controller_success_action>
-            <checkout_multishipping_controller_success_action>
-            <observers>
-              <points_observer>
-                <type>singleton</type>
-                <class>Betaout_Amplify_Model_Key</class>
-                <method>getAmplifyOrderSuccessPageView</method>
-              </points_observer>
-            </observers>
-          </checkout_multishipping_controller_success_action>
+            
             <sales_quote_remove_item>
                 <observers>
                     <sales_quote_remove_item>

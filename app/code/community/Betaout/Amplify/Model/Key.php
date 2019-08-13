@@ -465,25 +465,25 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
         try {
             if ($this->verified) {
 
-                $event = $evnt->getEvent();
-                $eventname = $event->getName();
-                $product = $event->getProduct();
-                $actionData = array();
-                $actionData[0]['productId'] = $product->getId();
-                $actionData[0]['productTitle'] = $product->getName();
-                $actionData[0]['sku'] = $product->getSku();
-                $actionData[0]['price'] = $product->getPrice();
-                $actionData[0]['currency'] = Mage::app()->getStore()->getBaseCurrencyCode();
-                
-                $actionData[0]['image_url'] = $product->getImageUrl();
-                $actionData[0]['product_url'] = $product->getProductUrl();
-
-                $actionDescription = array(
-                    'activity_type' => 'add_to_wishlist',
-                    'identifiers' => $this->getCustomerIdentity(),
-                    'products' => $actionData
-                );
-                $res = $this->amplify->customer_action($actionDescription);
+//                $event = $evnt->getEvent();
+//                $eventname = $event->getName();
+//                $product = $event->getProduct();
+//                $actionData = array();
+//                $actionData[0]['id'] = $product->getId();
+//                $actionData[0]['name'] = $product->getName();
+//                $actionData[0]['sku'] = $product->getSku();
+//                $actionData[0]['price'] = $product->getPrice();
+//                $actionData[0]['currency'] = Mage::app()->getStore()->getBaseCurrencyCode();
+//                
+//                $actionData[0]['image_url'] = $product->getImageUrl();
+//                $actionData[0]['product_url'] = $product->getProductUrl();
+//
+//                $actionDescription = array(
+//                    'activity_type' => 'add_to_wishlist',
+//                    'identifiers' => $this->getCustomerIdentity(),
+//                    'products' => $actionData
+//                );
+//                $res = $this->amplify->customer_action($actionDescription);
             }
         } catch (Exception $ex) {
             
@@ -586,7 +586,6 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     }catch(Exception $e){
                         
                     }
-                    $cateHolder=  array_filter($cateHolder);
                     $actionData[$i]['id'] = $product->getId();
                     $actionData[$i]['name'] = $product->getName();
                     $actionData[$i]['sku'] = $product->getSku();
@@ -648,6 +647,135 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
     }
 
     public function getAmplifyOrderSaveSuccess(Varien_Event_Observer $evnt) {
+         try {
+            if ($this->verified) {
+                if($this->bdebug){
+                 mail("rohit@getamplify.com","DEBUG order save before payment", "order save");
+                }
+               $order_id = $evnt->getEvent()->getOrder()->getId() ;
+               $order_no = $evnt->getEvent()->getOrder()->getIncrementId() ;
+               $order = Mage::getModel("sales/order")->load($order_id);
+               $person=array();
+               $paymentmethod=$order->getPayment()->getMethodInstance()->getCode();
+               $orderstatus=$order->getStatusLabel();
+               
+                $customerAddressId = Mage::getSingleton('customer/session')->getCustomer()->getDefaultShipping();
+                if ($customerAddressId) {
+                   $customer = $order->getShippingAddress();
+                      if (is_object($customer)) {
+                        $data['email']=$customer->getEmail();
+                        $data['phone'] = $customer->getTelephone();
+                        $data['customer_id'] = $customer->getCustomerId();
+                        $person['firstname'] = $customer->getFirstname();
+                        $person['lastname'] = $customer->getLastname();
+                        $person['postcode'] = $customer->getPostcode();
+                        $person['fax'] = $customer->getfax();
+                        $person['company'] = $customer->getCompany();
+                        $person['street'] = $customer->getStreetFull();
+                         }
+                         try {
+                           $this->amplify->identify($data);
+                          } catch (Exception $ex) {
+                      }
+                    $person = array_filter($person);
+                    $properties['update']=$person;
+                    $data=  array_filter($data);
+                    $res = $this->amplify->userProperties($data, $properties);
+                } else {
+                    $customer = $order->getShippingAddress();
+                    if (is_object($customer)) {
+                        $data['email']=$customer->getEmail();
+                        $data['phone'] = $customer->getTelephone();
+                        $data['customer_id'] = $customer->getCustomerId();
+                        $person['firstname'] = $customer->getFirstname();
+                        $person['lastname'] = $customer->getLastname();
+                        $person['postcode'] = $customer->getPostcode();
+                        $person['fax'] = $customer->getfax();
+                        $person['company'] = $customer->getCompany();
+                        $person['street'] = $customer->getStreetFull();
+                        try {
+                         $this->amplify->identify($data);
+                          } catch (Exception $ex) {
+                          }
+                       $person = array_filter($person);
+                       $properties['update']=$person;
+                       $data=  array_filter($data);
+                      $res = $this->amplify->userProperties($data, $properties);
+                    }
+                }
+                $items = $order->getAllVisibleItems();
+                $itemcount = count($items);
+                $i = 0;
+                $actionData = array();
+
+                foreach ($items as $itemId => $item) {
+                    $product = $item;
+                    $product = Mage::getModel('catalog/product')->load($product->getProductId());
+                    $categoryIds = $product->getCategoryIds();
+                    $cateHolder = array();
+                    
+                    foreach ($categoryIds as $cat) {
+                    $cateName = Mage::getModel('catalog/category')->load($cat['entity_id']);
+                    $name=$cateName->getName();
+                    $id=$cateName->getEntityId();
+                    $pid=$cateName->getParent_id();
+                    if($pid==1){
+                        $pid=0;
+                    }
+                     if(!empty($name)){
+                             $cateHolder[] = array_filter(array("cat_id"=>$id,"cat_name" => $name, "parent_cat_id" => $pid));
+                     }
+                   }
+                    
+                    $actionData[$i]['id'] = $product->getId();
+                    $actionData[$i]['name'] = $product->getName();
+                    $actionData[$i]['sku'] = $product->getSku();
+                    $actionData[$i]['price'] = $product->getFinalPrice();
+                    $actionData[$i]['currency'] = Mage::app()->getStore()->getBaseCurrencyCode();
+                    $actionData[$i]['image_url'] = $product->getImageUrl();
+                    $actionData[$i]['product_url'] = $product->getProductUrl();
+                    $actionData[$i]['brandname'] = $product->getResource()->getAttribute('manufacturer') ? $product->getAttributeText('manufacturer') : false;
+                    $actionData[$i]['quantity'] = (int) $item->getQtyOrdered();
+                    $actionData[$i]['categories'] = $cateHolder;
+                    $i++;
+                }
+
+                $cart = Mage::getSingleton('checkout/cart');
+                $TotalPrice = $order->getGrandTotal();
+                $totalShippingPrice = $order->getShippingAmount();
+                $TotalPrice = $TotalPrice;
+                $subTotalPrice = $order->getSubtotal();
+                $orderInfo["revenue"] = $subTotalPrice-abs($order->getDiscountAmount());
+                $orderInfo["total"] = $TotalPrice;
+                $orderInfo["shipping"] = $totalShippingPrice;
+                $orderInfo['order_id'] = $order_no;
+                $orderInfo['coupon'] = $order->getCouponCode();
+                $orderInfo['discount'] = abs($order->getDiscountAmount());
+                $orderInfo['currency'] = $order->getOrderCurrencyCode();
+                $orderInfo['status'] = $order->getStatusLabel();
+                $orderInfo['tax'] = $order->getShippingTaxAmount();
+                $orderInfo['payment_method']=$order->getPayment()->getMethodInstance()->getCode();
+
+
+                $actionDescription = array(
+                    'activity_type' => 'purchase',
+                    'identifiers' => $data,
+                    'order_info' => $orderInfo,
+                    'products' => $actionData
+                );
+                if($this->bdebug){
+                 mail("rohit@getamplify.com","DEBUG order data before payment",  json_encode($actionDescription));
+                }
+                $res = $this->amplify->customer_action($actionDescription);
+                 if($this->bdebug){
+                  mail("rohit@getamplify.com","DEBUG order response before payment",  json_encode($res));
+                 }
+            
+            }
+           
+        } catch (Exception $ex) {
+           $this->event('error_two');
+        }
     }
 
     public function getAmplify_checkout_allow_guest($evnt) {

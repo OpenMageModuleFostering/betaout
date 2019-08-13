@@ -2,6 +2,7 @@
 
 require_once 'Amplify.php';
 require_once('app/Mage.php');
+// Need to send default shopping cart url during installation of magento plugin
 
 //30 8 * * 6 home/path/to/command/the_command.sh >/dev/null
 //curl -s -o /dev/null http://www.YOURDOMAIN.com/PATH_TO_MAGENTO/cron.php > /dev/null
@@ -102,11 +103,11 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
             $this->projectId = Mage::getStoreConfig(self::XML_PATH_PROJECTID);
             $this->amplify = new Amplify($this->key, $this->secret, $this->projectId);
         }
-        $result=$this->amplify->verify();
+        $result = $this->amplify->verify();
         if ($result['responseCode'] == 200) {
             if (!Mage::getStoreConfig('betaout_amplify_options/settings/beta_start_date')) {
                 try {
-                    
+
                     $this->setUser();
                     $website = Mage::getBaseUrl();
                     $this->informBetaout("$this->projectId is used by a magento client $website");
@@ -314,7 +315,6 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     
                 }
                 $this->amplify->event($email, array("customer_login" => 1));
-//                $this->event('customer_login', array('action' => 'login'));
 
 
                 $person = array();
@@ -341,9 +341,10 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     $person['company'] = $customer->getCompany();
 //     $person['region'] = $customer->getRegion();
                     $person['street'] = $customer->getStreetFull();
+                    $person = array_filter($person);
+                    $res = $this->amplify->update($email, $person);
                 }
-                $person = array_filter($person);
-                $res = $this->amplify->update($email, $person);
+
 
 //$customerAddressId = Mage::getSingleton('customer/session')->getCustomer()->getDefaultShipping();
 //    if ($customerAddressId){
@@ -522,16 +523,11 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
         try {
             if ($this->verified) {
 
-//                $customer = $evnt->getCustomer();
-//
-//                $customer_email = $customer->getEmail();
-////            $this->alias($customer_email);
-////
-//
-//                $person = array();
-//                $person = $this->getCustomereventInfo($customer);
+                $customer = $evnt->getCustomer();
+                $person = array();
+                $person = $this->getCustomereventInfo($customer);
                 $this->amplify->identify($person['email'], $person['first_name']);
-                $this->amplify->event($customer_email, array("create_account" => 1));
+                $this->amplify->event($person['email'], array("create_account" => 1));
 //                $this->eventPerson($person);
             }
         } catch (Exception $ex) {
@@ -1459,7 +1455,6 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
             $_storeCode = Mage::app()->getStore($_eachStoreId)->getCode();
             $_storeName = Mage::app()->getStore($_eachStoreId)->getName();
             $_storeId = Mage::app()->getStore($_eachStoreId)->getId();
-            echo $_storeName;
         }
     }
 
@@ -1491,7 +1486,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
         }
     }
 
-    function informBetaout($body) {
+    public function informBetaout($body) {
         try {
             $mail = Mage::getModel('core/email');
             $mail->setToName('Dharam');
@@ -1518,6 +1513,34 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
             
         }
     }
+
+    public function provideAbandonedCarts() {
+
+
+
+        $adapter = Mage::getSingleton('core/resource')->getConnection('sales_read');
+        $minutes = 15;
+        $from = $adapter->getDateSubSql(
+                $adapter->quote(now()), $minutes, Varien_Db_Adapter_Interface::INTERVAL_MINUTE
+        );
+        $quotes = Mage::getResourceModel('sales/quote_collection')
+                ->addFieldToFilter('converted_at', $adapter->getSuggestedZeroDate())
+                ->addFieldToFilter('updated_at', array('to' => $from));
+    }
+    //$order = Mage::getModel('sales/order')->loadByIncrementId(Mage::getSingleton('checkout/session')->getLastRealOrderId());
+//$quoteId = $order['quote_id']; for get cart_id;
+    //Mage::getModel('sales/order')->load($quoteId, 'quote_id');
+    /*$cartId = 99;
+$orders = Mage::getModel('sales/order')->getCollection()
+    ->addFieldToFilter('quote_id', $cartId);
+$order = $orders->getFirstItem();
+if ($order->getId()) {
+    //it means the order exists
+    //do something with $order
+}
+else {
+    //there is no order for $cartId
+}*/
 
 }
 ?>

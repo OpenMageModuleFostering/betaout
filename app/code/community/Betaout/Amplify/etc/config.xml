@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <config>
-
-    
-    
-    <modules>
+ <modules>
         <Betaout_Amplify>
-            <version>0.1.1</version>
+            <version>0.1.5</version>
         </Betaout_Amplify>
     </modules>
     <global>
@@ -73,15 +70,7 @@
                     </customer_address_before_save>
                 </observers>
             </customer_address_save_before>
-            <customer_save_after>
-                <observers>
-                    <customer_save_after>
-                        <class>Betaout_Amplify_Model_Key</class>
-                        <method>customerSaveAfter</method>
-                    </customer_save_after>
-                </observers>
-            </customer_save_after>
-            <customer_register_success>
+           <customer_register_success>
                 <observers>
                     <amplify_customer_register_success>
                         <type>singleton</type>
@@ -107,24 +96,7 @@
                     </checkout_type_onepage_save_order>
                 </observers>
             </checkout_onepage_controller_success_action>
-            <checkout_type_onepage_save_order>
-                <observers>
-                    <checkout_type_onepage_save_order>
-                        <class>Betaout_Amplify_Model_Key</class>
-                        <method>checkout_type_onepage_save_order</method>
-                    </checkout_type_onepage_save_order>
-                </observers>
-            </checkout_type_onepage_save_order>
-            <!--            <catalog_product_save_before>
-                <observers>
-                    <catalog_product_save_before>
-                        <type>singleton</type>
-                        <class>Betaout_Amplify_Model_Key</class>
-                        <method>catalog_product_save_before</method>
-                    </catalog_product_save_before>
-                </observers>
-            </catalog_product_save_before>-->
-            <catalog_product_save_after>
+           <catalog_product_save_after>
                 <observers>
                     <catalog_product_save_after>
                         <type>singleton</type>
@@ -173,24 +145,6 @@
                     </sales_quote_remove_item>
                 </observers>
             </sales_quote_remove_item>
-            <!--            <checkout_cart_save_after>
-                <observers>
-                    <checkout_cart_save_after>
-                        <type>singleton</type>
-                        <class>Betaout_Amplify_Model_Key</class>
-                        <method>removeQuoteItem</method>
-                    </checkout_cart_save_after>
-                </observers>
-            </checkout_cart_save_after>-->
-            <!--            <checkout_cart_update_items_before>
-                <observers>
-                    <wishlist>
-                        <class>Betaout_Amplify_Model_Key</class>
-                        <method>eventRemoveFromCart</method>
-                    </wishlist>
-                </observers>
-            </checkout_cart_update_items_before>-->
-            
             <customer_logout>
                 <observers>
                     <amplify_customer_logout>
@@ -214,7 +168,7 @@
                     <amplify_customer_save>
                         <type>singleton</type>
                         <class>Betaout_Amplify_Model_Key</class>
-                        <method>eventCustomerSave</method>
+                        <method>getamplifyEventCustomerSave</method>
                     </amplify_customer_save>
                 </observers>
             </customer_save_commit_after>
@@ -227,17 +181,7 @@
                     </amplify_order_save>
                 </observers>
             </sales_order_place_after>
-            
-            
-            <!--            <sales_order_place_before>
-                <observers>
-                    <amplify_customer_register_from_checkout>
-                        <type>singleton</type>
-                        <class>Betaout_Amplify_Model_Key</class>
-                        <method>getamplifyEventCustomerSave</method>
-                    </amplify_customer_register_from_checkout>
-                </observers>
-            </sales_order_place_before>-->
+           
             <customer_register_success>
                 <observers>
                     <amplify_customer_register_success>
@@ -247,15 +191,6 @@
                     </amplify_customer_register_success>
                 </observers>
             </customer_register_success>
-            <!--            <checkout_cart_add_product_complete>
-                <observers>
-                    <amplify_add_to_cart>
-                        <type>singleton</type>
-                        <class>Betaout_Amplify_Model_Key</class>
-                        <method>getAmplifyEventAddToCart</method>
-                    </amplify_add_to_cart>
-                </observers>
-            </checkout_cart_add_product_complete> -->
             <controller_action_predispatch_checkout_cart_couponPost>
                 <observers>
                     <amplify_add_coupon_from_cart>
@@ -270,7 +205,7 @@
                     <amplify_add_coupon>
                         <type>singleton</type>
                         <class>Betaout_Amplify_Model_Key</class>
-                        <method>eventCoupon</method>
+                        <method>getAmplifyEventCoupon</method>
                     </amplify_add_coupon>
                 </observers>
             </controller_action_predispatch_onestepcheckout_index_add_coupon>
@@ -283,23 +218,6 @@
                     </amplify_newsletter_subscribe>
                 </observers>
             </newsletter_subscriber_save_before>
-            <!--            <newsletter_subscriber_save_after>
-                <observers>
-                    <personalmerchant_newsletter_subscribe_observer>
-                        <class>personalmerchant/backend_observer</class>
-                        <method>subscribeCustomer</method>
-                    </personalmerchant_newsletter_subscribe_observer>
-                </observers>
-            </newsletter_subscriber_save_after>
-            <newsletter_subscriber_delete_after>
-                <observers>
-                    <personalmerchant_newsletter_unsubscribe_observer>
-                        <class>personalmerchant/backend_observer</class>
-                        <method>unsubscribeCustomer</method>
-                    </personalmerchant_newsletter_unsubscribe_observer>
-                </observers>
-            </newsletter_subscriber_delete_after>-->
-            
             <review_controller_product_init_after>
                 <observers>
                     <amplify_product_review>
@@ -309,15 +227,6 @@
                     </amplify_product_review>
                 </observers>
             </review_controller_product_init_after>
-            <poll_vote_add>
-                <observers>
-                    <amplify_poll_vote>
-                        <type>singleton</type>
-                        <class>Betaout_Amplify_Model_Key</class>
-                        <method>getAmplifyEventVote</method>
-                    </amplify_poll_vote>
-                </observers>
-            </poll_vote_add>
             <wishlist_add_product>
                 <observers>
                     <amplify_wishlist_add_product >
@@ -327,25 +236,7 @@
                     </amplify_wishlist_add_product >
                 </observers>
             </wishlist_add_product>
-            <sales_quote_save_after>
-                <observers>
-                    <amplify_sales_quote_save_after>
-                        <type>singleton</type>
-                        <class>Betaout_Amplify_Model_Key</class>
-                        <method>sales_quote_save_after</method>
-                    </amplify_sales_quote_save_after>
-                </observers>
-            </sales_quote_save_after>
-            <!--                        <sales_quote_save_before>
-                <observers>
-                    <amplify_sales_quote_save_before>
-                        <type>singleton</type>
-                        <class>Betaout_Amplify_Model_Key</class>
-                        <method>sales_quote_save_after</method>
-                    </amplify_sales_quote_save_before>
-                </observers>
-            </sales_quote_save_before>-->
-            <checkout_allow_guest>
+          <checkout_allow_guest>
                 <observers>
                     <amplify_checkout_allow_guest>
                         <type>singleton</type>
@@ -440,14 +331,14 @@
             </catalog_product_edit_action>
         </events>  
     </adminhtml>
-    <default>
+<!--    <default>
         <betaout_amplify_options>                
             <order>
                 <cron_setting>*/1 * * * *</cron_setting>
             </order>
         </betaout_amplify_options>
-    </default>
-    <crontab>
+    </default>-->
+<!--    <crontab>
         <jobs>                
             <betaout_export_send_order>
                 <schedule>
@@ -458,17 +349,6 @@
                 </run>
             </betaout_export_send_order>
         </jobs>
-<!--        <events>
-            <checkout_cart_add_product_complete>
-                <observers>
-                    <amplify_add_to_cart>
-                        <type>singleton</type>
-                        <class>Betaout_Amplify_Model_Key</class>
-                        <method>getAmplifyEventAddToCart</method>
-                    </amplify_add_to_cart>
-                </observers>
-            </checkout_cart_add_product_complete> 
-        </events>-->
-    </crontab>
+    </crontab>-->
    
 </config>

@@ -65,12 +65,12 @@ class Amplify {
      *
      */
     protected $publicationUrl;
-    protected $agent = 'v9';
+    protected $agent = 'v10';
 
     /**
      * amplify host
      */
-    public $host = 'betaout.com';
+    public $host = 'betaout.in';
 
     /**
      * amplify version
@@ -124,7 +124,7 @@ class Amplify {
      * function end point mapping
      */
     protected $functionUrlMap = array(
-        'identify' => 'user/identifyminimal/',
+        'identify' => 'user/identify/',
         'event' => 'user/event/',
         'update' => 'user/update/',
         'add' => 'user/add/',
@@ -508,7 +508,7 @@ class Amplify {
     }
 
     public function setOtt() {
-        $this->ott = Mage::getModel('core/cookie')->get('amplifyUid');
+        $this->ott = Mage::getModel('core/cookie')->get('_ampUITN');
     }
 
     public function getOtt() {
@@ -522,15 +522,23 @@ class Amplify {
             $this->showError[] = "paramter should be associative array!";
         $this->setOtt();
         if (isset($this->ott)) {
-            $params['ott'] = $this->getOtt();
+            $params['token'] = $this->getOtt();
+        }
+        if((isset($params['email'])&& empty($params['email'])) ||!isset($params['email']))
+        {
+            $email=base64_decode(Mage::getModel('core/cookie')->get('_ampEm'));
+            if($email!=""){
+            $params['email']= base64_decode(Mage::getModel('core/cookie')->get('_ampEm'));
+            $params['token']="";
+            }
         }
         try {
             if (!isset($params['apiKey']))
                 $params['apiKey'] = $this->getApiKey();
             if (!isset($params['timestamp']))
                 $params['timestamp'] = $this->getTimeStamp();
-            ksort($params);
-            $paramUrl = http_build_query($params, null, "&");
+            
+           $paramUrl = json_encode($params);
             $this->setParams($paramUrl);
         } catch (Exception $ex) {
             $this->showError[] = $ex->getCode() . ":" . $ex->getMessage();
@@ -553,15 +561,16 @@ class Amplify {
                 $this->deviceDetector();
                 $requestUrl = $this->getPublicationUrl() . $this->functionUrlMap[$functionName]; //there should be error handling to make sure function name exist
                 if (isset($argumentsArray) && is_array($argumentsArray) && count($argumentsArray) > 0) {
-//                    $argumentsArray['systemInfo'] = array('device' => $this->deviceDetect, 'os' => '', 'browser' => '');
+                    $argumentsArray['systemInfo'] = $_SERVER['HTTP_USER_AGENT'];
                     $this->makeParams($argumentsArray);
                 } else
                     $this->makeParams();
-                $requestUrl.="?" . $this->getParams();
-                $this->setRequestUrl($requestUrl);
-                $this->signString();
-                $requestUrl = $this->getRequestUrl() . "&hash=" . $this->getHash() . "&ip=" . Mage::helper('core/http')->getRemoteAddr(true) . "&agent=" . $this->agent;
-                return $this->makeRequest($requestUrl);
+                $paramdata=$this->getParams();
+                //$requestUrl.="?" . $this->getParams();
+                //$this->setRequestUrl($requestUrl,$paramdata);
+                //$this->signString();
+               
+                return $this->makeRequest($requestUrl,$paramdata);
             } catch (Exception $ex) {
                 $this->showError[] = $ex->getCode() . ":" . $ex->getMessage();
             }
@@ -589,12 +598,14 @@ class Amplify {
 //        return str_replace(str_replace('%7E', '~', rawurlencode(($string))));
     }
 
-    protected function makeRequest($requestUrl, $ch = null) {
+    protected function makeRequest($requestUrl,$data="", $ch = null) {
         if (!$ch) {
             $ch = curl_init();
         }
         $options = self::$CURL_OPTS;
         $options[CURLOPT_URL] = $requestUrl;
+       
+        $options[CURLOPT_POSTFIELDS]=array("params"=>$data);
 //        print_r($requestUrl);
 
 
@@ -643,22 +654,27 @@ class Amplify {
      * Replace with name and email of current user
      */
 
-    public function identify($email = '', $name = '', $url = '', $referer = '') {
+    public function identify($email = '', $name = '', $url = '', $referer = '',$token='') {
 
-
-// print cookie value
-        $this->ott = Mage::getModel('core/cookie')->get('amplifyUid');
+         $cemail="";
+         if(Mage::getModel('core/cookie')->get('_ampUITN')!=""){
+             $token=Mage::getModel('core/cookie')->get('_ampUITN');
+         }
+         if(Mage::getModel('core/cookie')->get('_ampEm')!=""){
+             $cemail=  base64_decode(Mage::getModel('core/cookie')->get('_ampEm'));
+          }
+        if($email==''){
+            $email=$cemail;
+        }
+        
         $argumentsArray = array('email' => $email, 'name' => $name, 'url' => $url, 'referer' => $referer);
         $response = $this->http_call('identify', $argumentsArray);
-        if ($response['responseCode'] == '200') {
-            Mage::getModel('core/cookie')->set('amplifyUid', $response['amplifySession'], time() + 604800, '/');
-//            if (!isset($_COOKIE['amplifysid']))
-//                setcookie('amplifysid', $response['amplifySession'], time() + 604800, '/');
-//            if (!isset($_COOKIE['lifeCycleId']))
-//                setcookie('lifeCycleId', $response['lifecycleId'], time() + 604800, '/');
-//            if (!isset($_COOKIE['userKnown']))
-//                setcookie('userKnown', $response['userKnown'], time() + 604800, '/');
-        }
+           if($email!=''){
+            setcookie('_ampEm',base64_encode($email),time()+604800,'/');
+            setcookie('_ampUITN','',time()+604800,'/');
+            }
+
+     
 
         return $response;
     }
@@ -802,7 +818,10 @@ class Amplify {
         $argumentsArray = $actionDescription;
         return $this->http_call('send_old_order', $argumentsArray);
     }
-
+ public function getToken() {
+        $visitorData = Mage::getSingleton('core/session')->getVisitorData();
+        return $visitorData['visitor_id'];
+    }
 }
 
 ?>

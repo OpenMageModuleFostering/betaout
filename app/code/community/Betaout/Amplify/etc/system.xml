@@ -123,7 +123,7 @@
                         </check_conflicts>
                     </fields>
                 </conflictchecker>
-                <order translate="label">
+<!--                <order translate="label">
                     <label>What's about previous data</label>
                     <frontend_type>text</frontend_type>
                     <sort_order>2</sort_order>
@@ -146,7 +146,7 @@
                             <show_in_default>1</show_in_default>
                         </cron_setting>
                     </fields>
-                </order>
+                </order>-->
             </groups>
         </betaout_amplify_options>
         

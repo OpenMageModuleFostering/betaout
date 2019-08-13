@@ -11,45 +11,36 @@ try {
     }
     else {
         $identity= Mage::getModel('core/cookie')->get('amplify_email');
-    }
-    if (Mage::getStoreConfig('betaout_amplify_options/settings/amplify_verified')) {
+      }
+   
         ?>
         <script type="text/javascript">
             var Amplify = "";
-            AmplifyConnect_Widget = <?php echo Mage::getStoreConfig("betaout_amplify_options/settings/AmplifyConnect_Widget"); ?>;
-            shareTracking = "<?php echo Mage::getStoreConfig("betaout_amplify_options/settings/shareTracking"); ?>";
+            _bOutCW = <?php echo Mage::getStoreConfig("betaout_amplify_options/settings/AmplifyConnect_Widget"); ?>;
+            _bOutST = "<?php echo Mage::getStoreConfig("betaout_amplify_options/settings/shareTracking"); ?>";
             urlTracking = "<?php echo Mage::getStoreConfig("betaout_amplify_options/settings/urlTracking"); ?>";
-            API_Key = '<?php echo Mage::getStoreConfig("betaout_amplify_options/settings/amplify_secret"); ?>';
-            Project_Id = '<?php echo Mage::getStoreConfig("betaout_amplify_options/settings/amplify_projectId"); ?>';
-            function _amplify(u) {
+            _bOutAKEY = '<?php echo Mage::getStoreConfig("betaout_amplify_options/settings/amplify_key"); ?>';
+            _bOutPID = '<?php echo Mage::getStoreConfig("betaout_amplify_options/settings/amplify_projectId"); ?>';
+            
+                var _bOut = _bOut || [];
+                function _bOutS(u) {
                 var d = document, f = d.getElementsByTagName("script")[0], _sc = d.createElement("script");
                 _sc.type = "text/javascript";
                 _sc.async = true;
                 _sc.src = u;
                 f.parentNode.insertBefore(_sc, f);
-                __d = false;
-                _sc.onload = _sc.onreadystatechange = function () {
-                    if (!__d && (!this.readyState || this.readyState === "loaded" || this.readyState === "complete")) {
-                        __d = true;
-                        Amplify = new AmplifyEngine();
-                    }
-                };
-            }
-            _amplify("//d3oa6jk77hlbow.cloudfront.net/tejas.min.js");
-//                        _amplify("//1.amplify.to/tejasv2/testerNew.js?v=47");
-            window.amplifyInit = function () {
-       
-                Amplify.identify({
-                    email: '<?php echo $identity; ?>',
-                    name: ''
-                });
+                }
+                _bOutS("//d22vyp49cxb9py.cloudfront.net/jal.min.js");
 
-            }
+                _bOut.push(["identify", {
+                        "email": "<?php echo $identity; ?>",
+                        "name": ""
+                 }]);
 
         </script>
 
         <?php
-    };
+ 
 } catch (Exception $ex) {
     
 }

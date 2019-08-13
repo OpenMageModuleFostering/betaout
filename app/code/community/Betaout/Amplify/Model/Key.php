@@ -1,6 +1,7 @@
 <?php
-require_once 'Amplify.php';
-require_once('app/Mage.php');
+require_once Mage::getModuleDir('Model', 'Betaout_Amplify').DS.'Model/Amplify.php';
+//require_once('Amplify.php');
+//require_once('app/Mage.php');
 
 // Need to send default shopping cart url during installation of magento plugin
 //30 8 * * 6 home/path/to/command/the_command.sh >/dev/null
@@ -61,7 +62,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
 //            $this->key = Mage::getStoreConfig(self::XML_PATH_KEY);
 //            $this->secret = Mage::getStoreConfig(self::XML_PATH_SECRET);
 //            $this->projectId = Mage::getStoreConfig(self::XML_PATH_PROJECTID);
-//            $this->amplify = new Amplify($this->key, $this->secret, $this->projectId);
+//            $this->amplify = new Betaout_Amplify_Model_Amplify($this->key, $this->secret, $this->projectId);
 //            Mage::getModel('core/config')->saveConfig('betaout_amplify_options/settings/amplify_verified', TRUE);
 //             Mage::getStoreConfig('betaout_amplify_options/settings/beta_start_date');
 //           if (!Mage::getStoreConfig('betaout_amplify_options/settings/beta_start_date')) {
@@ -110,15 +111,22 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $actionData[0]['category'] = "";
                 $actionData[0]['discount'] = abs($product->getPrice() - $product->getFinalPrice());
                 $subprice = (int) $product->getQty() * $product->getPrice();
+                $subprice=Mage::helper('core')->currency($subprice , false, false);
                 $cart = Mage::getSingleton('checkout/cart');
+                $cart_id=$cart->getQuote()->getId();
                 $subTotalPrice = $cart->getQuote()->getGrandTotal();
                 $orderInfo["subtotalPrice"] = $subTotalPrice - $subprice;
+                $orderInfo['shoppingCartNo'] =$cart_id;
+                $orderInfo['currency'] = Mage::app()->getStore()->getCurrentCurrencyCode();
                 $actionDescription = array(
                     'action' => 'removed_from_cart',
                     'email' => $this->getCustomerIdentity(),
                     'or' => $orderInfo,
                     'pd' => $actionData
                 );
+                
+                
+              //mail("rohit@getamplify.com","removedfrom cart",json_encode($actionDescription));
                 $res = $this->amplify->customer_action($actionDescription);
             }
         } catch (Exception $ex) {
@@ -152,8 +160,9 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $sku = $productName . "_" . $product->getSku();
                 $qty = $product->getPrice();
                 $cart = Mage::getSingleton('checkout/cart');
-
-
+                $cart_id=$cart->getQuote()->getId();
+                setcookie('_ampCart',$cart_id,time()+604800,'/');
+             
 //                $this->event('add_to_cart', array('product_name' => false));
                 $stock_data = $product->getIs_in_stock();
 //                $product = Mage::getModel('catalog/product')->load($productId);
@@ -177,15 +186,18 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $actionData[0]['discount'] = abs($product->getPrice() - $product->getFinalPrice());
                 $subTotalPrice = $cart->getQuote()->getGrandTotal();
                 $orderInfo["subtotalPrice"] = $subTotalPrice;
+                $orderInfo["shoppingCartNo"] = $cart_id;
                 $orderInfo['abandonedCheckoutUrl'] = Mage::getUrl('checkout/cart');
-                $orderInfo['currency'] = Mage::app()->getStore()->getBaseCurrencyCode();
+                $orderInfo['currency'] =Mage::app()->getStore()->getCurrentCurrencyCode(); 
                 $actionDescription = array(
                     'or' => $orderInfo,
                     'email' => $this->getCustomerIdentity(),
                     'action' => 'add_to_cart',
                     'pd' => $actionData
                 );
+                //mail("rohit@getamplify.com","add to cart",json_encode($actionDescription));
                 $res = $this->amplify->customer_action($actionDescription);
+             
             }
         } catch (Exception $ex) {
             
@@ -620,7 +632,8 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     $i++;
                 }
 
-                $cart = Mage::getSingleton('checkout/cart');
+                //$cart = Mage::getSingleton('checkout/cart');
+                $cart_id=Mage::getModel('core/cookie')->get('_ampCart');
                 $TotalPrice = $order->getGrandTotal();
                 $totalShippingPrice = $order->getShippingAmount();
                 $TotalPrice = $TotalPrice;
@@ -635,6 +648,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                 $orderInfo['DiscountDesc'] = $order->getDiscountDescription();
                 $orderInfo['currency'] = $order->getOrderCurrencyCode();
                 $orderInfo['financialStatus'] = 'paid';
+                $orderInfo['shoppingCartNo'] =$cart_id;
                 $orderInfo['abandonedCheckoutUrl'] = Mage::getUrl('checkout/cart');
                 $orderInfo['totalTaxes'] = $order->getShippingTaxAmount();
                 $orderInfo['paymentType'] = $order->getPayment()->getMethodInstance()->getCode();
@@ -647,7 +661,9 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     'or' => $orderInfo,
                     'pd' => $actionData
                 );
+                // mail("rohit@getamplify.com","purchased",json_encode($actionDescription));
                 $res = $this->amplify->customer_action($actionDescription);
+                
             }
         } catch (Exception $ex) {
             $this->event('error_one');
@@ -860,7 +876,7 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                     "email" => $this->getCustomerIdentity(),
                     'pd' => $actionData
                 );
-
+               
                 $res = $this->amplify->customer_action($actionDescription);
             }
         } catch (Exception $ex) {
@@ -928,24 +944,28 @@ class Betaout_Amplify_Model_Key extends Mage_Core_Model_Abstract {
                         $newQty = (int) $product->getQty();
                         $qtyDiff = 0;
                         $subdiff = $subdiff + ($newQty - $oldQty) * $product->getPrice();
-
                         $actionData[$i]['qty'] = (int) $product->getQty();
                         $actionData[$i]['category'] = $cateHolder;
                         $i++;
                     }
                 }
+                $subdiff=Mage::helper('core')->currency($subdiff , false, false);
+                
                 $cart = Mage::getSingleton('checkout/cart');
+                $cart_id=$cart->getQuote()->getId();
                 $subTotalPrice = $cart->getQuote()->getGrandTotal();
                 $orderInfo["subtotalPrice"] = $subTotalPrice + $subdiff;
                 $orderInfo['abandonedCheckoutUrl'] = Mage::getUrl('checkout/cart');
-                $orderInfo['currency'] = Mage::app()->getStore()->getBaseCurrencyCode();
+                $orderInfo['shoppingCartNo'] =$cart_id;
+                $orderInfo['currency'] = Mage::app()->getStore()->getCurrentCurrencyCode(); 
                 $actionDescription = array(
                     'or' => $orderInfo,
                     'email' => $this->getCustomerIdentity(),
                     'action' => 'update_cart',
                     'pd' => $actionData
                 );
-
+              
+                //mail("rohit@getamplify.com","update cart",json_encode($actionDescription));
                 $res = $this->amplify->customer_action($actionDescription);
             }
         } catch (Exception $ex) {

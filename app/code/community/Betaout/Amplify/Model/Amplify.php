@@ -34,7 +34,7 @@
 /**
  * amplify.to API
  */
-require_once('app/Mage.php');
+//require_once('app/Mage.php');
 
 class Amplify {
     /*
@@ -766,17 +766,17 @@ class Amplify {
 
     private function _bot_detected() {
 
-        if (isset($_SERVER['HTTP_USER_AGENT']) && preg_match('/bot|crawl|slurp|spider/i', $_SERVER['HTTP_USER_AGENT'])) {
-            $this->botDetect = true;
-        } else {
-
-            foreach ($this->spiders as $spider) {
-//If the spider text is found in the current user agent, then return true
-                if (stripos($_SERVER['HTTP_USER_AGENT'], $spider) !== false)
-                    $this->botDetect = true;
-            }
-//If it gets this far then no bot was found!
-        }
+//        if (isset($_SERVER['HTTP_USER_AGENT']) && preg_match('/bot|crawl|slurp|spider/i', $_SERVER['HTTP_USER_AGENT'])) {
+//            $this->botDetect = true;
+//        } else {
+//
+//            foreach ($this->spiders as $spider) {
+////If the spider text is found in the current user agent, then return true
+//                if (stripos($_SERVER['HTTP_USER_AGENT'], $spider) !== false)
+//                    $this->botDetect = true;
+//            }
+////If it gets this far then no bot was found!
+//        }
     }
 
     protected function deviceDetector() {

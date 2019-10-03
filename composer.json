@@ -1,16 +1,19 @@
 {
-    "name": "OpenMageModuleFostering/Betaout",
+    "name": "OpenMageModuleFostering\/Betaout",
     "type": "magento-module",
     "license": "GPL",
     "homepage": "",
     "description": "Helping Ecommerce Companies drive more sales and customer happiness. ",
     "authors": [
-    {
-        "name": "jitendra",
-        "email": "jitendra@getamplify.com"
-    }
-],
+        {
+            "name": "jitendra",
+            "email": "jitendra@getamplify.com"
+        }
+    ],
     "suggest": {
-        "magento-hackathon/magento-composer-installer": "*"
-    }
+        "magento-hackathon\/magento-composer-installer": "*"
+    },
+    "keywords": [
+        "openmage-module"
+    ]
 }
